@@ -1,0 +1,30 @@
+server:
+  port: 8081
+
+spring:
+  application:
+    name: auth-service
+  datasource:
+    url: jdbc:postgresql://localhost:5432/authdb
+    username: TravelApplication123
+    password: TravelApplication123
+    driver-class-name: org.postgresql.Driver
+  jpa:
+    hibernate:
+      ddl-auto: update
+    show-sql: false
+
+feign:
+  client:
+    config:
+      default:
+        connectTimeout: 5000
+        readTimeout: 15000
+
+services:
+  employee:
+    url: http://localhost:8080/ems
+
+jwt:
+  secret: MySuperSecureAesEncryptionKey123456   # ✅ MATCHES gateway
+  expiration-seconds: 3600

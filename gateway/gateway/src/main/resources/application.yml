@@ -1,0 +1,58 @@
+server:
+  port: 8088
+
+spring:
+  application:
+    name: api-gateway
+
+  cloud:
+    gateway:
+      routes:
+        # 🧩 Employee Service
+        - id: employee-service
+          uri: http://localhost:8080
+          predicates:
+            - Path=/ems/**
+          filters:
+            - AddRequestHeader=X-Internal-Gateway-Secret, bwc-secure-gateway
+
+        # 🧩 Travel Request Management Service
+        - id: travel-request-management
+          uri: http://localhost:8090
+          predicates:
+            - Path=/travel-management/**
+          filters:
+            - AddRequestHeader=X-Internal-Gateway-Secret, bwc-secure-gateway
+
+        # 🧩 Approval Workflow Service — handles internal and manager APIs
+        - id: approval-workflow-service
+          uri: http://localhost:8086
+          predicates:
+            - Path=/api/workflows/**, /api/manager/**   # ✅ Add both
+          filters:
+            - AddRequestHeader=X-Internal-Gateway-Secret, bwc-secure-gateway
+
+      # 🧱 Remove unsafe headers before forwarding
+      default-filters:
+        - RemoveRequestHeader=Connection
+        - RemoveRequestHeader=Keep-Alive
+        - RemoveRequestHeader=Transfer-Encoding
+        - RemoveRequestHeader=TE
+        - RemoveRequestHeader=Trailer
+        - RemoveRequestHeader=Upgrade
+        - RemoveRequestHeader=Proxy-Authorization
+
+# 🔐 JWT Config (used for token verification & role forwarding)
+jwt:
+  secret: MySuperSecureAesEncryptionKey123456   # ✅ SAME as Auth & Workflow services
+  expiration-seconds: 3600
+
+# 🔑 Internal Gateway Shared Secret
+gateway:
+  internal:
+    secret: bwc-secure-gateway                   # ✅ SAME across Gateway + Workflow
+
+logging:
+  level:
+    org.springframework.cloud.gateway: DEBUG
+    com.bwc.gateway: DEBUG
