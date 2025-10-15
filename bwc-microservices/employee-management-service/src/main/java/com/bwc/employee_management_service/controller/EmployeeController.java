@@ -365,6 +365,34 @@ public class EmployeeController {
         return ResponseEntity.ok(ApiResponse.success(healthInfo, "Service is healthy",
                 getRequestPath(), getTraceId()));
     }
+    
+    @GetMapping("/role/{roleName}")
+    @Operation(summary = "Get employees by role", description = "Retrieves all employees having a specific role (e.g., MANAGER, HR, FINANCE)")
+    @ApiResponses(value = {
+        @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "Employees retrieved successfully"),
+        @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "404", description = "No employees found with given role")
+    })
+    public ResponseEntity<ApiResponse<List<EmployeeResponse>>> getEmployeesByRole(
+            @Parameter(description = "Role name", example = "MANAGER") 
+            @PathVariable String roleName) {
+
+        log.info("Fetching employees with role: {}", roleName);
+        List<EmployeeResponse> employees = employeeService.getEmployeesByRole(roleName);
+
+        if (employees.isEmpty()) {
+            throw new com.bwc.common.exception.ResourceNotFoundException("No employees found with role: " + roleName);
+        }
+
+        ApiResponse<List<EmployeeResponse>> response = ApiResponse.success(
+                employees,
+                "Employees retrieved successfully for role: " + roleName,
+                getRequestPath(),
+                getTraceId()
+        ).withMetadata(Map.of("count", employees.size(), "role", roleName));
+
+        return ResponseEntity.ok(response);
+    }
+
 
     // Helper methods for traceability
     private String getRequestPath() {

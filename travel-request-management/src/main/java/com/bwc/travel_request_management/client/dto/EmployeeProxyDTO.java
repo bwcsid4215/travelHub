@@ -1,11 +1,6 @@
-package com.bwc.employee_service.dto;
+package com.bwc.travel_request_management.client.dto;
 
-
-
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Data;
-import lombok.NoArgsConstructor;
+import lombok.*;
 
 import java.util.Set;
 import java.util.UUID;
@@ -22,7 +17,5 @@ public class EmployeeProxyDTO {
     private String level;
     private UUID managerId;
     private Set<String> roles;
-
-    // ✅ Add this line
-    private Set<UUID> projectIds;
+    private Set<UUID> projectIds; // ✅ Add this
 }

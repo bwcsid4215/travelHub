@@ -43,9 +43,12 @@ public class EmployeeResponse {
     @Schema(description = "Set of assigned role UUIDs")
     private Set<UUID> roleIds;
 
+    @Schema(description = "Set of assigned role names", example = "[\"HR\", \"MANAGER\"]")
+    private Set<String> roles;
+    
     @Schema(description = "Set of assigned project UUIDs")
     private Set<UUID> projectIds;
-
+    
     @Schema(description = "Creation timestamp", 
             example = "2023-12-07T10:30:00.000Z", accessMode = Schema.AccessMode.READ_ONLY)
     private LocalDateTime createdAt;

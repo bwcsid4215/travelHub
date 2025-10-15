@@ -374,6 +374,16 @@ public class EmployeeService {
                 
         return employeeMapper.toResponse(updatedEmployee);
     }
+    
+    @Transactional(readOnly = true)
+    public List<EmployeeResponse> getEmployeesByRole(String roleName) {
+        log.info("Fetching employees by role: {}", roleName);
+        return employeeRepository.findByRoleName(roleName.toUpperCase())
+                .stream()
+                .map(employeeMapper::toResponse)
+                .collect(Collectors.toList());
+    }
+
 
     private Pageable buildPageable(SearchRequest searchRequest) {
         Sort sort = Sort.by(Sort.Direction.fromString(
