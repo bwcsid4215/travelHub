@@ -1,29 +1,39 @@
 package com.bwc.authservice.controller;
 
-import com.bwc.authservice.dto.AuthRequest;
-import com.bwc.authservice.dto.AuthResponse;
-import com.bwc.authservice.dto.UserRegistrationDTO;
-import com.bwc.authservice.entity.AuthUser;
-import com.bwc.authservice.service.AuthService;
-import com.bwc.authservice.security.JwtUtil;
-import jakarta.servlet.http.HttpServletResponse;
-import lombok.RequiredArgsConstructor;
+import java.util.List;
+import java.util.Map;
+
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseCookie;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.CookieValue;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
 
-import java.util.List;
-import java.util.Map;
+import com.bwc.authservice.dto.AuthRequest;
+import com.bwc.authservice.dto.AuthResponse;
+import com.bwc.authservice.dto.UserRegistrationDTO;
+import com.bwc.authservice.entity.AuthUser;
+import com.bwc.authservice.security.JwtUtil;
+import com.bwc.authservice.service.AuthService;
+
+import jakarta.servlet.http.HttpServletResponse;
+import lombok.RequiredArgsConstructor;
 
 @RestController
 @RequestMapping("/api/auth")
 @RequiredArgsConstructor
 public class AuthController {
 
+	@Autowired
     private final AuthService service;
-    private final JwtUtil jwtUtil;
+    @Autowired
+	private final JwtUtil jwtUtil;
 
     @PostMapping("/login")
     public ResponseEntity<Map<String, Object>> login(@RequestBody AuthRequest req, HttpServletResponse response) {

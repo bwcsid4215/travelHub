@@ -18,6 +18,7 @@ import com.bwc.travel_request_management.dto.TravelRequestDTO;
 import com.bwc.travel_request_management.dto.TravelRequestProxyDTO;
 import com.bwc.travel_request_management.entity.TravelRequest;
 import com.bwc.travel_request_management.exception.ResourceNotFoundException;
+import com.bwc.travel_request_management.kafka.TravelRequestProducer;
 import com.bwc.travel_request_management.mapper.TravelRequestManualMapper;
 import com.bwc.travel_request_management.repository.TravelRequestRepository;
 import com.bwc.travel_request_management.service.TravelRequestService;
@@ -34,7 +35,9 @@ public class TravelRequestServiceImpl implements TravelRequestService {
     private final TravelRequestRepository repository;
     private final TravelRequestManualMapper mapper;
     private final WorkflowServiceClient workflowServiceClient;
+    private final TravelRequestProducer travelRequestProducer;
 
+    
     @Override
     @Transactional
     public TravelRequestDTO createRequest(TravelRequestDTO dto) {
@@ -78,11 +81,9 @@ public class TravelRequestServiceImpl implements TravelRequestService {
             @Override
             public void afterCommit() {
                 try {
-                    workflowServiceClient.createWorkflowWithTravelRequest(
-                        travelRequestProxy, 
-                        "PRE_TRAVEL", 
-                        saved.getEstimatedBudget()
-                    );
+	                	travelRequestProducer.sendTravelRequest(travelRequestProxy);
+	                	log.info("✅ Kafka event published for PRE_TRAVEL workflow initiation");
+
                     log.info("✅ PRE_TRAVEL workflow initiated for request ID: {}", saved.getTravelRequestId());
                 } catch (Exception e) {
                     log.error("❌ Failed to initiate workflow for request {}: {}", saved.getTravelRequestId(), e.getMessage(), e);

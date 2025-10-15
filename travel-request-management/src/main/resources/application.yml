@@ -6,7 +6,7 @@ spring:
     name: travel-request-management
 
   datasource:
-    url: jdbc:postgresql://localhost:5432/TravelRequestDatabase
+    url: jdbc:postgresql://BWC-97.brainwaveconsulting.co.in:5432/TravelRequestDatabase
     username: TravelApplication123
     password: TravelApplication123
     driver-class-name: org.postgresql.Driver
@@ -55,7 +55,7 @@ server:
   servlet:
     context-path: /travel-management
   tomcat:
-    connection-timeout: 10s        # ✅ fixed (moved here)
+    connection-timeout: 10s
     max-threads: 200
     min-spare-threads: 20
     accept-count: 200
@@ -106,6 +106,29 @@ resilience4j:
       notification-service:
         max-attempts: 3
         wait-duration: 2s
+
+# =========================================================
+# 🚀 Kafka Configuration
+# =========================================================
+
+
+  kafka:
+    bootstrap-servers: localhost:9092
+
+    producer:
+      key-serializer: org.apache.kafka.common.serialization.StringSerializer
+      value-serializer: org.springframework.kafka.support.serializer.JsonSerializer
+      properties:
+        spring.json.add.type.headers: false   # 🚀 Don’t send class metadata in headers
+
+    consumer:
+      group-id: travel-request-group
+      auto-offset-reset: earliest
+      key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+      value-deserializer: org.springframework.kafka.support.serializer.JsonDeserializer
+      properties:
+        spring.json.trusted.packages: "*"
+        spring.json.use.type.headers: false   # 🚀 Ignore any type headers if they appear
 
 # =========================================================
 # 🧾 Logging
@@ -172,5 +195,5 @@ management:
   prometheus:
     metrics:
       export:
-        enabled: true      # ✅ fixed (no deprecation warning)
+        enabled: true
         step: 30s

@@ -8,7 +8,7 @@ spring:
 #    active: dev
 
   datasource:
-    url: jdbc:postgresql://localhost:5432/ApprovalWorkflowDatabase
+    url: jdbc:postgresql://BWC-97.brainwaveconsulting.co.in:5432/ApprovalWorkflowDatabase
     username: TravelApplication123
     password: TravelApplication123
     driver-class-name: org.postgresql.Driver
@@ -44,6 +44,29 @@ spring:
             read-timeout: 7000
             logger-level: basic
 
+  # =========================================================
+  # 🚀 Kafka Configuration
+  # =========================================================
+  kafka:
+    bootstrap-servers: localhost:9092
+    consumer:
+      group-id: workflow-group
+      auto-offset-reset: earliest
+      key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+      value-deserializer: org.springframework.kafka.support.serializer.ErrorHandlingDeserializer
+      properties:
+        spring.deserializer.value.delegate.class: org.springframework.kafka.support.serializer.JsonDeserializer
+        spring.json.trusted.packages: "*"
+        spring.json.use.type.headers: false
+        spring.json.value.default.type: com.bwc.approval_workflow_service.dto.TravelRequestProxyDTO
+    producer:
+      key-serializer: org.apache.kafka.common.serialization.StringSerializer
+      value-serializer: org.springframework.kafka.support.serializer.JsonSerializer
+      properties:
+        spring.json.add.type.headers: false   # ✅ Don’t add class headers
+    listener:
+      missing-topics-fatal: false
+
 # =========================================================
 # ⚙️ Server Configuration
 # =========================================================
@@ -53,7 +76,7 @@ server:
   servlet:
     context-path: /workflow
   tomcat:
-    connection-timeout: 10s      # ✅ moved from root (non-deprecated)
+    connection-timeout: 10s
     max-threads: 200
     min-spare-threads: 20
     accept-count: 200
@@ -181,5 +204,5 @@ management:
   prometheus:
     metrics:
       export:
-        enabled: true    # ✅ replaced deprecated key
+        enabled: true
         step: 30s

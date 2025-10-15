@@ -1,0 +1,99 @@
+2025-10-15T15:08:48.885+05:30  INFO 21532 --- [ApiGatewayApplication] [main] com.bwc.gateway.ApiGatewayApplication    : Starting ApiGatewayApplication using Java 21.0.7 with PID 21532 (D:\sid\TRAVELREQUETMANAGEMENT\gateway\target\classes started by sdarade in D:\sid\TRAVELREQUETMANAGEMENT\gateway)
+2025-10-15T15:08:48.886+05:30 DEBUG 21532 --- [ApiGatewayApplication] [main] com.bwc.gateway.ApiGatewayApplication    : Running with Spring Boot v3.3.4, Spring v6.1.13
+2025-10-15T15:08:48.886+05:30  INFO 21532 --- [ApiGatewayApplication] [main] com.bwc.gateway.ApiGatewayApplication    : No active profile set, falling back to 1 default profile: "default"
+2025-10-15T15:08:49.216+05:30  INFO 21532 --- [ApiGatewayApplication] [main] o.s.cloud.context.scope.GenericScope     : BeanFactory id=f9e2cdff-541f-38c9-a919-466a6f7d7486
+2025-10-15T15:08:49.609+05:30  INFO 21532 --- [ApiGatewayApplication] [main] o.s.c.g.r.RouteDefinitionRouteLocator    : Loaded RoutePredicateFactory [After]
+2025-10-15T15:08:49.609+05:30  INFO 21532 --- [ApiGatewayApplication] [main] o.s.c.g.r.RouteDefinitionRouteLocator    : Loaded RoutePredicateFactory [Before]
+2025-10-15T15:08:49.609+05:30  INFO 21532 --- [ApiGatewayApplication] [main] o.s.c.g.r.RouteDefinitionRouteLocator    : Loaded RoutePredicateFactory [Between]
+2025-10-15T15:08:49.609+05:30  INFO 21532 --- [ApiGatewayApplication] [main] o.s.c.g.r.RouteDefinitionRouteLocator    : Loaded RoutePredicateFactory [Cookie]
+2025-10-15T15:08:49.609+05:30  INFO 21532 --- [ApiGatewayApplication] [main] o.s.c.g.r.RouteDefinitionRouteLocator    : Loaded RoutePredicateFactory [Header]
+2025-10-15T15:08:49.609+05:30  INFO 21532 --- [ApiGatewayApplication] [main] o.s.c.g.r.RouteDefinitionRouteLocator    : Loaded RoutePredicateFactory [Host]
+2025-10-15T15:08:49.609+05:30  INFO 21532 --- [ApiGatewayApplication] [main] o.s.c.g.r.RouteDefinitionRouteLocator    : Loaded RoutePredicateFactory [Method]
+2025-10-15T15:08:49.609+05:30  INFO 21532 --- [ApiGatewayApplication] [main] o.s.c.g.r.RouteDefinitionRouteLocator    : Loaded RoutePredicateFactory [Path]
+2025-10-15T15:08:49.609+05:30  INFO 21532 --- [ApiGatewayApplication] [main] o.s.c.g.r.RouteDefinitionRouteLocator    : Loaded RoutePredicateFactory [Query]
+2025-10-15T15:08:49.609+05:30  INFO 21532 --- [ApiGatewayApplication] [main] o.s.c.g.r.RouteDefinitionRouteLocator    : Loaded RoutePredicateFactory [ReadBody]
+2025-10-15T15:08:49.609+05:30  INFO 21532 --- [ApiGatewayApplication] [main] o.s.c.g.r.RouteDefinitionRouteLocator    : Loaded RoutePredicateFactory [RemoteAddr]
+2025-10-15T15:08:49.609+05:30  INFO 21532 --- [ApiGatewayApplication] [main] o.s.c.g.r.RouteDefinitionRouteLocator    : Loaded RoutePredicateFactory [XForwardedRemoteAddr]
+2025-10-15T15:08:49.609+05:30  INFO 21532 --- [ApiGatewayApplication] [main] o.s.c.g.r.RouteDefinitionRouteLocator    : Loaded RoutePredicateFactory [Weight]
+2025-10-15T15:08:49.609+05:30  INFO 21532 --- [ApiGatewayApplication] [main] o.s.c.g.r.RouteDefinitionRouteLocator    : Loaded RoutePredicateFactory [CloudFoundryRouteService]
+2025-10-15T15:08:49.819+05:30  INFO 21532 --- [ApiGatewayApplication] [main] o.s.b.web.embedded.netty.NettyWebServer  : Netty started on port 9016 (http)
+2025-10-15T15:08:49.862+05:30  INFO 21532 --- [ApiGatewayApplication] [main] com.bwc.gateway.ApiGatewayApplication    : Started ApiGatewayApplication in 1.211 seconds (process running for 1.536)
+2025-10-15T17:01:51.423+05:30  INFO 21532 --- [ApiGatewayApplication] [RMI TCP Connection(121)-127.0.0.1] inMXBeanRegistrar$SpringApplicationAdmin : Application shutdown requested.
+2025-10-15T17:01:53.067+05:30  INFO 21532 --- [ApiGatewayApplication] [RMI TCP Connection(123)-127.0.0.1] inMXBeanRegistrar$SpringApplicationAdmin : Application shutdown requested.
+2025-10-15T17:01:53.074+05:30  WARN 21532 --- [ApiGatewayApplication] [RMI TCP Connection(121)-127.0.0.1] o.s.c.support.DefaultLifecycleProcessor  : Failed to stop bean 'reactorResourceFactory'
+
+reactor.core.Exceptions$ReactiveException: java.lang.InterruptedException
+	at reactor.core.Exceptions.propagate(Exceptions.java:410) ~[reactor-core-3.6.10.jar:3.6.10]
+	at reactor.core.publisher.BlockingSingleSubscriber.blockingGet(BlockingSingleSubscriber.java:96) ~[reactor-core-3.6.10.jar:3.6.10]
+	at reactor.core.publisher.Mono.block(Mono.java:1779) ~[reactor-core-3.6.10.jar:3.6.10]
+	at org.springframework.http.client.ReactorResourceFactory.stop(ReactorResourceFactory.java:298) ~[spring-web-6.1.13.jar:6.1.13]
+	at org.springframework.context.SmartLifecycle.stop(SmartLifecycle.java:117) ~[spring-context-6.1.13.jar:6.1.13]
+	at org.springframework.context.support.DefaultLifecycleProcessor.doStop(DefaultLifecycleProcessor.java:346) ~[spring-context-6.1.13.jar:6.1.13]
+	at org.springframework.context.support.DefaultLifecycleProcessor$LifecycleGroup.stop(DefaultLifecycleProcessor.java:488) ~[spring-context-6.1.13.jar:6.1.13]
+	at java.base/java.lang.Iterable.forEach(Iterable.java:75) ~[na:na]
+	at org.springframework.context.support.DefaultLifecycleProcessor.stopBeans(DefaultLifecycleProcessor.java:315) ~[spring-context-6.1.13.jar:6.1.13]
+	at org.springframework.context.support.DefaultLifecycleProcessor.onClose(DefaultLifecycleProcessor.java:215) ~[spring-context-6.1.13.jar:6.1.13]
+	at org.springframework.context.support.AbstractApplicationContext.doClose(AbstractApplicationContext.java:1148) ~[spring-context-6.1.13.jar:6.1.13]
+	at org.springframework.boot.web.reactive.context.ReactiveWebServerApplicationContext.doClose(ReactiveWebServerApplicationContext.java:149) ~[spring-boot-3.3.4.jar:3.3.4]
+	at org.springframework.context.support.AbstractApplicationContext.close(AbstractApplicationContext.java:1102) ~[spring-context-6.1.13.jar:6.1.13]
+	at org.springframework.boot.admin.SpringApplicationAdminMXBeanRegistrar$SpringApplicationAdmin.shutdown(SpringApplicationAdminMXBeanRegistrar.java:160) ~[spring-boot-3.3.4.jar:3.3.4]
+	at java.base/jdk.internal.reflect.DirectMethodHandleAccessor.invoke(DirectMethodHandleAccessor.java:103) ~[na:na]
+	at java.base/java.lang.reflect.Method.invoke(Method.java:580) ~[na:na]
+	at sun.reflect.misc.Trampoline.invoke(MethodUtil.java:64) ~[na:na]
+	at java.base/jdk.internal.reflect.DirectMethodHandleAccessor.invoke(DirectMethodHandleAccessor.java:103) ~[na:na]
+	at java.base/java.lang.reflect.Method.invoke(Method.java:580) ~[na:na]
+	at java.base/sun.reflect.misc.MethodUtil.invoke(MethodUtil.java:97) ~[na:na]
+	at java.management/com.sun.jmx.mbeanserver.ConvertingMethod.invokeWithOpenReturn(ConvertingMethod.java:193) ~[na:na]
+	at java.management/com.sun.jmx.mbeanserver.ConvertingMethod.invokeWithOpenReturn(ConvertingMethod.java:175) ~[na:na]
+	at java.management/com.sun.jmx.mbeanserver.MXBeanIntrospector.invokeM2(MXBeanIntrospector.java:115) ~[na:na]
+	at java.management/com.sun.jmx.mbeanserver.MXBeanIntrospector.invokeM2(MXBeanIntrospector.java:52) ~[na:na]
+	at java.management/com.sun.jmx.mbeanserver.MBeanIntrospector.invokeM(MBeanIntrospector.java:236) ~[na:na]
+	at java.management/com.sun.jmx.mbeanserver.PerInterface.invoke(PerInterface.java:138) ~[na:na]
+	at java.management/com.sun.jmx.mbeanserver.MBeanSupport.invoke(MBeanSupport.java:252) ~[na:na]
+	at java.management/com.sun.jmx.interceptor.DefaultMBeanServerInterceptor.invoke(DefaultMBeanServerInterceptor.java:803) ~[na:na]
+	at java.management/com.sun.jmx.mbeanserver.JmxMBeanServer.invoke(JmxMBeanServer.java:802) ~[na:na]
+	at java.management.rmi/javax.management.remote.rmi.RMIConnectionImpl.doOperation(RMIConnectionImpl.java:1472) ~[na:na]
+	at java.management.rmi/javax.management.remote.rmi.RMIConnectionImpl$PrivilegedOperation.run(RMIConnectionImpl.java:1310) ~[na:na]
+	at java.management.rmi/javax.management.remote.rmi.RMIConnectionImpl.doPrivilegedOperation(RMIConnectionImpl.java:1405) ~[na:na]
+	at java.management.rmi/javax.management.remote.rmi.RMIConnectionImpl.invoke(RMIConnectionImpl.java:829) ~[na:na]
+	at java.base/jdk.internal.reflect.DirectMethodHandleAccessor.invoke(DirectMethodHandleAccessor.java:103) ~[na:na]
+	at java.base/java.lang.reflect.Method.invoke(Method.java:580) ~[na:na]
+	at java.rmi/sun.rmi.server.UnicastServerRef.dispatch(UnicastServerRef.java:360) ~[na:na]
+	at java.rmi/sun.rmi.transport.Transport$1.run(Transport.java:200) ~[na:na]
+	at java.rmi/sun.rmi.transport.Transport$1.run(Transport.java:197) ~[na:na]
+	at java.base/java.security.AccessController.doPrivileged(AccessController.java:714) ~[na:na]
+	at java.rmi/sun.rmi.transport.Transport.serviceCall(Transport.java:196) ~[na:na]
+	at java.rmi/sun.rmi.transport.tcp.TCPTransport.handleMessages(TCPTransport.java:598) ~[na:na]
+	at java.rmi/sun.rmi.transport.tcp.TCPTransport$ConnectionHandler.run0(TCPTransport.java:844) ~[na:na]
+	at java.rmi/sun.rmi.transport.tcp.TCPTransport$ConnectionHandler.lambda$run$0(TCPTransport.java:721) ~[na:na]
+	at java.base/java.security.AccessController.doPrivileged(AccessController.java:400) ~[na:na]
+	at java.rmi/sun.rmi.transport.tcp.TCPTransport$ConnectionHandler.run(TCPTransport.java:720) ~[na:na]
+	at java.base/java.util.concurrent.ThreadPoolExecutor.runWorker(ThreadPoolExecutor.java:1144) ~[na:na]
+	at java.base/java.util.concurrent.ThreadPoolExecutor$Worker.run(ThreadPoolExecutor.java:642) ~[na:na]
+	at java.base/java.lang.Thread.run(Thread.java:1583) ~[na:na]
+Caused by: java.lang.InterruptedException: null
+	at java.base/java.util.concurrent.locks.AbstractQueuedSynchronizer.acquireSharedInterruptibly(AbstractQueuedSynchronizer.java:1100) ~[na:na]
+	at java.base/java.util.concurrent.CountDownLatch.await(CountDownLatch.java:230) ~[na:na]
+	at reactor.core.publisher.BlockingSingleSubscriber.blockingGet(BlockingSingleSubscriber.java:91) ~[reactor-core-3.6.10.jar:3.6.10]
+	... 46 common frames omitted
+
+2025-10-15T17:04:32.894+05:30  INFO 24972 --- [ApiGatewayApplication] [main] com.bwc.gateway.ApiGatewayApplication    : Starting ApiGatewayApplication using Java 21.0.7 with PID 24972 (D:\sid\TRAVELREQUETMANAGEMENT\gateway\target\classes started by sdarade in D:\sid\TRAVELREQUETMANAGEMENT\gateway)
+2025-10-15T17:04:32.895+05:30 DEBUG 24972 --- [ApiGatewayApplication] [main] com.bwc.gateway.ApiGatewayApplication    : Running with Spring Boot v3.3.4, Spring v6.1.13
+2025-10-15T17:04:32.895+05:30  INFO 24972 --- [ApiGatewayApplication] [main] com.bwc.gateway.ApiGatewayApplication    : No active profile set, falling back to 1 default profile: "default"
+2025-10-15T17:04:33.220+05:30  INFO 24972 --- [ApiGatewayApplication] [main] o.s.cloud.context.scope.GenericScope     : BeanFactory id=f9e2cdff-541f-38c9-a919-466a6f7d7486
+2025-10-15T17:04:33.592+05:30  INFO 24972 --- [ApiGatewayApplication] [main] o.s.c.g.r.RouteDefinitionRouteLocator    : Loaded RoutePredicateFactory [After]
+2025-10-15T17:04:33.592+05:30  INFO 24972 --- [ApiGatewayApplication] [main] o.s.c.g.r.RouteDefinitionRouteLocator    : Loaded RoutePredicateFactory [Before]
+2025-10-15T17:04:33.592+05:30  INFO 24972 --- [ApiGatewayApplication] [main] o.s.c.g.r.RouteDefinitionRouteLocator    : Loaded RoutePredicateFactory [Between]
+2025-10-15T17:04:33.592+05:30  INFO 24972 --- [ApiGatewayApplication] [main] o.s.c.g.r.RouteDefinitionRouteLocator    : Loaded RoutePredicateFactory [Cookie]
+2025-10-15T17:04:33.592+05:30  INFO 24972 --- [ApiGatewayApplication] [main] o.s.c.g.r.RouteDefinitionRouteLocator    : Loaded RoutePredicateFactory [Header]
+2025-10-15T17:04:33.592+05:30  INFO 24972 --- [ApiGatewayApplication] [main] o.s.c.g.r.RouteDefinitionRouteLocator    : Loaded RoutePredicateFactory [Host]
+2025-10-15T17:04:33.592+05:30  INFO 24972 --- [ApiGatewayApplication] [main] o.s.c.g.r.RouteDefinitionRouteLocator    : Loaded RoutePredicateFactory [Method]
+2025-10-15T17:04:33.592+05:30  INFO 24972 --- [ApiGatewayApplication] [main] o.s.c.g.r.RouteDefinitionRouteLocator    : Loaded RoutePredicateFactory [Path]
+2025-10-15T17:04:33.592+05:30  INFO 24972 --- [ApiGatewayApplication] [main] o.s.c.g.r.RouteDefinitionRouteLocator    : Loaded RoutePredicateFactory [Query]
+2025-10-15T17:04:33.592+05:30  INFO 24972 --- [ApiGatewayApplication] [main] o.s.c.g.r.RouteDefinitionRouteLocator    : Loaded RoutePredicateFactory [ReadBody]
+2025-10-15T17:04:33.592+05:30  INFO 24972 --- [ApiGatewayApplication] [main] o.s.c.g.r.RouteDefinitionRouteLocator    : Loaded RoutePredicateFactory [RemoteAddr]
+2025-10-15T17:04:33.592+05:30  INFO 24972 --- [ApiGatewayApplication] [main] o.s.c.g.r.RouteDefinitionRouteLocator    : Loaded RoutePredicateFactory [XForwardedRemoteAddr]
+2025-10-15T17:04:33.592+05:30  INFO 24972 --- [ApiGatewayApplication] [main] o.s.c.g.r.RouteDefinitionRouteLocator    : Loaded RoutePredicateFactory [Weight]
+2025-10-15T17:04:33.593+05:30  INFO 24972 --- [ApiGatewayApplication] [main] o.s.c.g.r.RouteDefinitionRouteLocator    : Loaded RoutePredicateFactory [CloudFoundryRouteService]
+2025-10-15T17:04:33.796+05:30  INFO 24972 --- [ApiGatewayApplication] [main] o.s.b.web.embedded.netty.NettyWebServer  : Netty started on port 9016 (http)
+2025-10-15T17:04:33.840+05:30  INFO 24972 --- [ApiGatewayApplication] [main] com.bwc.gateway.ApiGatewayApplication    : Started ApiGatewayApplication in 1.179 seconds (process running for 1.504)

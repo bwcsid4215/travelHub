@@ -1,21 +1,42 @@
 package com.bwc.approval_workflow_service.service.impl;
 
-import com.bwc.approval_workflow_service.client.*;
-import com.bwc.approval_workflow_service.dto.*;
-import com.bwc.approval_workflow_service.entity.*;
-import com.bwc.approval_workflow_service.exception.*;
-import com.bwc.approval_workflow_service.mapper.ApprovalWorkflowMapper;
-import com.bwc.approval_workflow_service.repository.*;
-import com.bwc.approval_workflow_service.service.ApprovalWorkflowService;
-import feign.FeignException;
-import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
+import java.time.LocalDateTime;
+import java.util.List;
+import java.util.UUID;
+import java.util.stream.Collectors;
+
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import java.time.LocalDateTime;
-import java.util.*;
-import java.util.stream.Collectors;
+
+import com.bwc.approval_workflow_service.client.EmployeeServiceClient;
+import com.bwc.approval_workflow_service.client.NotificationServiceClient;
+import com.bwc.approval_workflow_service.client.PolicyServiceClient;
+import com.bwc.approval_workflow_service.client.TravelRequestServiceClient;
+import com.bwc.approval_workflow_service.dto.ApprovalActionDTO;
+import com.bwc.approval_workflow_service.dto.ApprovalRequestDTO;
+import com.bwc.approval_workflow_service.dto.ApprovalStatsDTO;
+import com.bwc.approval_workflow_service.dto.ApprovalWorkflowDTO;
+import com.bwc.approval_workflow_service.dto.EmployeeProxyDTO;
+import com.bwc.approval_workflow_service.dto.NotificationRequestDTO;
+import com.bwc.approval_workflow_service.dto.TravelRequestProxyDTO;
+import com.bwc.approval_workflow_service.dto.WorkflowMetricsDTO;
+import com.bwc.approval_workflow_service.entity.ApprovalAction;
+import com.bwc.approval_workflow_service.entity.ApprovalWorkflow;
+import com.bwc.approval_workflow_service.entity.WorkflowConfiguration;
+import com.bwc.approval_workflow_service.exception.ResourceNotFoundException;
+import com.bwc.approval_workflow_service.exception.WorkflowException;
+import com.bwc.approval_workflow_service.kafka.WorkflowStatusEvent;
+import com.bwc.approval_workflow_service.kafka.WorkflowStatusProducer;
+import com.bwc.approval_workflow_service.mapper.ApprovalWorkflowMapper;
+import com.bwc.approval_workflow_service.repository.ApprovalActionRepository;
+import com.bwc.approval_workflow_service.repository.ApprovalWorkflowRepository;
+import com.bwc.approval_workflow_service.repository.WorkflowConfigurationRepository;
+import com.bwc.approval_workflow_service.service.ApprovalWorkflowService;
+
+import feign.FeignException;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
 @Service
@@ -30,6 +51,9 @@ public class ApprovalWorkflowServiceImpl implements ApprovalWorkflowService {
     private final EmployeeServiceClient employeeClient;
     private final NotificationServiceClient notificationClient;
     private final ApprovalWorkflowMapper mapper;
+    private final WorkflowStatusProducer workflowStatusProducer;
+
+    
 
     @Override
     @Transactional
@@ -42,7 +66,7 @@ public class ApprovalWorkflowServiceImpl implements ApprovalWorkflowService {
     @Override
     @Transactional
     public ApprovalWorkflowDTO initiateWorkflow(TravelRequestProxyDTO travelRequest, String workflowType, Double estimatedCost) {
-        UUID travelRequestId = travelRequest.travelRequestId();
+        UUID travelRequestId = travelRequest.getTravelRequestId();
         
         // ✅ Prevent duplicates for the same travel request + workflow type
         if (workflowRepository.findByTravelRequestIdAndWorkflowType(travelRequestId, workflowType).isPresent()) {
@@ -50,7 +74,7 @@ public class ApprovalWorkflowServiceImpl implements ApprovalWorkflowService {
         }
 
         // No need to fetch travel request - we already have it!
-        EmployeeProxyDTO employee = fetchEmployeeSafe(travelRequest.employeeId());
+        EmployeeProxyDTO employee = fetchEmployeeSafe(travelRequest.getEmployeeId());
 
         List<WorkflowConfiguration> configs = configRepository
                 .findByWorkflowTypeAndIsActiveTrueOrderBySequenceOrder(workflowType);
@@ -82,7 +106,7 @@ public class ApprovalWorkflowServiceImpl implements ApprovalWorkflowService {
                 .workflowId(savedWorkflow.getWorkflowId())
                 .travelRequestId(travelRequestId)
                 .approverRole("SYSTEM")
-                .approverId(travelRequest.employeeId())
+                .approverId(travelRequest.getEmployeeId())
                 .action("SUBMIT")
                 .step("SUBMIT")
                 .comments(workflowType + " workflow initiated")
@@ -455,6 +479,10 @@ public class ApprovalWorkflowServiceImpl implements ApprovalWorkflowService {
         }
 
         sendCompletionNotification(workflow);
+        workflowStatusProducer.sendWorkflowStatus(
+        	    new WorkflowStatusEvent(workflow.getTravelRequestId(), status, "Workflow " + status)
+        	);
+
     }
 
     // Helper methods
@@ -482,7 +510,7 @@ public class ApprovalWorkflowServiceImpl implements ApprovalWorkflowService {
      * to ensure accurate assignment (avoids stale travelRequest.managerId values).
      */
     private UUID determineApproverId(WorkflowConfiguration step, TravelRequestProxyDTO travelRequest) {
-        UUID employeeId = travelRequest.employeeId();
+        UUID employeeId = travelRequest.getEmployeeId();
 
         if ("MANAGER".equalsIgnoreCase(step.getApproverRole())) {
             try {
@@ -547,7 +575,7 @@ public class ApprovalWorkflowServiceImpl implements ApprovalWorkflowService {
     private String calculatePriority(TravelRequestProxyDTO travelRequest, Double estimatedCost) {
         if (estimatedCost != null && estimatedCost > 5000) return "HIGH";
         long days = java.time.temporal.ChronoUnit.DAYS.between(
-                travelRequest.startDate(), travelRequest.endDate());
+                travelRequest.getStartDate(), travelRequest.getEndDate());
         if (days > 14) return "HIGH";
         return "NORMAL";
     }

@@ -72,3 +72,213 @@ Caused by: java.lang.IllegalStateException: Cannot load driver class: com.micros
 	at java.base/java.lang.reflect.Method.invoke(Method.java:580)
 	at org.springframework.beans.factory.support.SimpleInstantiationStrategy.lambda$instantiate$0(SimpleInstantiationStrategy.java:172)
 	... 36 common frames omitted
+2025-10-15 15:10:22 [main] INFO  c.b.p.PolicyManagementServiceApplication - Starting PolicyManagementServiceApplication using Java 21.0.7 with PID 11000 (D:\sid\TRAVELREQUETMANAGEMENT\bwc-microservices\policymanagement\target\classes started by sdarade in D:\sid\TRAVELREQUETMANAGEMENT\bwc-microservices\policymanagement)
+2025-10-15 15:10:22 [main] DEBUG c.b.p.PolicyManagementServiceApplication - Running with Spring Boot v3.5.6, Spring v6.2.11
+2025-10-15 15:10:22 [main] INFO  c.b.p.PolicyManagementServiceApplication - No active profile set, falling back to 1 default profile: "default"
+2025-10-15 15:10:23 [main] INFO  o.s.d.r.c.RepositoryConfigurationDelegate - Bootstrapping Spring Data JPA repositories in DEFAULT mode.
+2025-10-15 15:10:23 [main] INFO  o.s.d.r.c.RepositoryConfigurationDelegate - Finished Spring Data repository scanning in 33 ms. Found 6 JPA repository interfaces.
+2025-10-15 15:10:23 [main] INFO  o.s.b.w.e.tomcat.TomcatWebServer - Tomcat initialized with port 9012 (http)
+2025-10-15 15:10:23 [main] INFO  o.a.catalina.core.StandardService - Starting service [Tomcat]
+2025-10-15 15:10:23 [main] INFO  o.a.catalina.core.StandardEngine - Starting Servlet engine: [Apache Tomcat/10.1.46]
+2025-10-15 15:10:23 [main] INFO  o.a.c.c.C.[.[localhost].[/policy] - Initializing Spring embedded WebApplicationContext
+2025-10-15 15:10:23 [main] INFO  o.s.b.w.s.c.ServletWebServerApplicationContext - Root WebApplicationContext: initialization completed in 1179 ms
+2025-10-15 15:10:24 [main] INFO  o.h.jpa.internal.util.LogHelper - HHH000204: Processing PersistenceUnitInfo [name: default]
+2025-10-15 15:10:24 [main] INFO  org.hibernate.Version - HHH000412: Hibernate ORM core version 6.6.29.Final
+2025-10-15 15:10:24 [main] INFO  o.h.c.i.RegionFactoryInitiator - HHH000026: Second-level cache disabled
+2025-10-15 15:10:24 [main] INFO  o.s.o.j.p.SpringPersistenceUnitInfo - No LoadTimeWeaver setup: ignoring JPA class transformer
+2025-10-15 15:10:24 [main] INFO  com.zaxxer.hikari.HikariDataSource - HikariPool-1 - Starting...
+2025-10-15 15:10:24 [main] INFO  com.zaxxer.hikari.pool.HikariPool - HikariPool-1 - Added connection org.postgresql.jdbc.PgConnection@5a5a973c
+2025-10-15 15:10:24 [main] INFO  com.zaxxer.hikari.HikariDataSource - HikariPool-1 - Start completed.
+2025-10-15 15:10:24 [main] WARN  org.hibernate.orm.deprecation - HHH90000025: PostgreSQLDialect does not need to be specified explicitly using 'hibernate.dialect' (remove the property setting and it will be selected by default)
+2025-10-15 15:10:24 [main] INFO  o.hibernate.orm.connections.pooling - HHH10001005: Database info:
+	Database JDBC URL [Connecting through datasource 'HikariDataSource (HikariPool-1)']
+	Database driver: undefined/unknown
+	Database version: 18.0
+	Autocommit mode: undefined/unknown
+	Isolation level: undefined/unknown
+	Minimum pool size: undefined/unknown
+	Maximum pool size: undefined/unknown
+2025-10-15 15:10:25 [main] INFO  o.h.e.t.j.p.i.JtaPlatformInitiator - HHH000489: No JTA platform available (set 'hibernate.transaction.jta.platform' to enable JTA platform integration)
+2025-10-15 15:10:25 [main] DEBUG org.hibernate.SQL - 
+    create table cities (
+        id uuid not null,
+        created_at timestamp(6),
+        updated_at timestamp(6),
+        version bigint,
+        description varchar(500),
+        name varchar(100) not null,
+        category_id uuid not null,
+        primary key (id)
+    )
+2025-10-15 15:10:25 [main] DEBUG org.hibernate.SQL - 
+    create table city_categories (
+        id uuid not null,
+        created_at timestamp(6),
+        updated_at timestamp(6),
+        version bigint,
+        description varchar(500),
+        name varchar(100) not null,
+        primary key (id)
+    )
+2025-10-15 15:10:25 [main] DEBUG org.hibernate.SQL - 
+    create table grade_policies (
+        id uuid not null,
+        created_at timestamp(6),
+        updated_at timestamp(6),
+        version bigint,
+        grade varchar(10) not null,
+        lodging_company_rate float(53) not null,
+        lodging_own_rate float(53) not null,
+        per_diem_day_trip_rule varchar(500) not null,
+        per_diem_overnight_rule varchar(500) not null,
+        policy_id uuid not null,
+        primary key (id)
+    )
+2025-10-15 15:10:25 [main] DEBUG org.hibernate.SQL - 
+    create table policies (
+        id uuid not null,
+        created_at timestamp(6),
+        updated_at timestamp(6),
+        version bigint,
+        active boolean not null,
+        year integer not null,
+        category_id uuid not null,
+        primary key (id)
+    )
+2025-10-15 15:10:25 [main] DEBUG org.hibernate.SQL - 
+    create table travel_classes (
+        id uuid not null,
+        class_name varchar(100) not null,
+        created_at timestamp(6),
+        updated_at timestamp(6),
+        travel_mode_id uuid not null,
+        primary key (id)
+    )
+2025-10-15 15:10:25 [main] DEBUG org.hibernate.SQL - 
+    create table travel_modes (
+        id uuid not null,
+        created_at timestamp(6),
+        mode_name varchar(50) not null,
+        updated_at timestamp(6),
+        grade_policy_id uuid not null,
+        primary key (id)
+    )
+2025-10-15 15:10:25 [main] DEBUG org.hibernate.SQL - 
+    alter table if exists city_categories 
+       drop constraint if exists UK4ddjt2mfm7m8n2lvpcmu6l6j0
+2025-10-15 15:10:25 [main] WARN  o.h.e.jdbc.spi.SqlExceptionHelper - SQL Warning Code: 0, SQLState: 00000
+2025-10-15 15:10:25 [main] WARN  o.h.e.jdbc.spi.SqlExceptionHelper - constraint "uk4ddjt2mfm7m8n2lvpcmu6l6j0" of relation "city_categories" does not exist, skipping
+2025-10-15 15:10:25 [main] DEBUG org.hibernate.SQL - 
+    alter table if exists city_categories 
+       add constraint UK4ddjt2mfm7m8n2lvpcmu6l6j0 unique (name)
+2025-10-15 15:10:25 [main] DEBUG org.hibernate.SQL - 
+    alter table if exists grade_policies 
+       drop constraint if exists uk_grade_policy_policy_grade
+2025-10-15 15:10:25 [main] WARN  o.h.e.jdbc.spi.SqlExceptionHelper - SQL Warning Code: 0, SQLState: 00000
+2025-10-15 15:10:25 [main] WARN  o.h.e.jdbc.spi.SqlExceptionHelper - constraint "uk_grade_policy_policy_grade" of relation "grade_policies" does not exist, skipping
+2025-10-15 15:10:25 [main] DEBUG org.hibernate.SQL - 
+    alter table if exists grade_policies 
+       add constraint uk_grade_policy_policy_grade unique (policy_id, grade)
+2025-10-15 15:10:25 [main] DEBUG org.hibernate.SQL - 
+    alter table if exists policies 
+       drop constraint if exists uk_policy_category_year
+2025-10-15 15:10:25 [main] WARN  o.h.e.jdbc.spi.SqlExceptionHelper - SQL Warning Code: 0, SQLState: 00000
+2025-10-15 15:10:25 [main] WARN  o.h.e.jdbc.spi.SqlExceptionHelper - constraint "uk_policy_category_year" of relation "policies" does not exist, skipping
+2025-10-15 15:10:25 [main] DEBUG org.hibernate.SQL - 
+    alter table if exists policies 
+       add constraint uk_policy_category_year unique (category_id, year)
+2025-10-15 15:10:25 [main] DEBUG org.hibernate.SQL - 
+    create index idx_class_travel_mode 
+       on travel_classes (class_name, travel_mode_id)
+2025-10-15 15:10:25 [main] DEBUG org.hibernate.SQL - 
+    create index idx_mode_grade 
+       on travel_modes (mode_name, grade_policy_id)
+2025-10-15 15:10:25 [main] DEBUG org.hibernate.SQL - 
+    alter table if exists cities 
+       add constraint FKcaxe5npcuvw16g9fw2gsbwgd9 
+       foreign key (category_id) 
+       references city_categories
+2025-10-15 15:10:25 [main] DEBUG org.hibernate.SQL - 
+    alter table if exists grade_policies 
+       add constraint fk_grade_policy_policy 
+       foreign key (policy_id) 
+       references policies
+2025-10-15 15:10:25 [main] DEBUG org.hibernate.SQL - 
+    alter table if exists policies 
+       add constraint fk_policy_category 
+       foreign key (category_id) 
+       references city_categories
+2025-10-15 15:10:25 [main] DEBUG org.hibernate.SQL - 
+    alter table if exists travel_classes 
+       add constraint FKoj1c255c489sit2egyvgxh6as 
+       foreign key (travel_mode_id) 
+       references travel_modes
+2025-10-15 15:10:25 [main] DEBUG org.hibernate.SQL - 
+    alter table if exists travel_modes 
+       add constraint FK2thct9c59khdll1vw2va83mex 
+       foreign key (grade_policy_id) 
+       references grade_policies
+2025-10-15 15:10:25 [main] INFO  o.s.o.j.LocalContainerEntityManagerFactoryBean - Initialized JPA EntityManagerFactory for persistence unit 'default'
+2025-10-15 15:10:25 [main] INFO  o.s.d.j.r.query.QueryEnhancerFactory - Hibernate is in classpath; If applicable, HQL parser will be used.
+2025-10-15 15:10:27 [main] INFO  o.s.b.w.e.tomcat.TomcatWebServer - Tomcat started on port 9012 (http) with context path '/policy'
+2025-10-15 15:10:27 [main] INFO  o.s.b.w.e.tomcat.TomcatWebServer - Tomcat initialized with port 9112 (http)
+2025-10-15 15:10:27 [main] INFO  o.a.catalina.core.StandardService - Starting service [Tomcat]
+2025-10-15 15:10:27 [main] INFO  o.a.catalina.core.StandardEngine - Starting Servlet engine: [Apache Tomcat/10.1.46]
+2025-10-15 15:10:27 [main] INFO  o.a.c.c.C.[Tomcat-1].[localhost].[/] - Initializing Spring embedded WebApplicationContext
+2025-10-15 15:10:27 [main] INFO  o.s.b.w.s.c.ServletWebServerApplicationContext - Root WebApplicationContext: initialization completed in 53 ms
+2025-10-15 15:10:27 [main] INFO  o.s.b.a.e.web.EndpointLinksResolver - Exposing 4 endpoints beneath base path '/actuator'
+2025-10-15 15:10:27 [main] INFO  o.s.b.w.e.tomcat.TomcatWebServer - Tomcat started on port 9112 (http) with context path '/'
+2025-10-15 15:10:27 [main] INFO  c.b.p.PolicyManagementServiceApplication - Started PolicyManagementServiceApplication in 4.703 seconds (process running for 5.031)
+2025-10-15 15:10:27 [RMI TCP Connection(7)-127.0.0.1] INFO  o.a.c.c.C.[.[localhost].[/policy] - Initializing Spring DispatcherServlet 'dispatcherServlet'
+2025-10-15 15:10:27 [RMI TCP Connection(7)-127.0.0.1] INFO  o.s.web.servlet.DispatcherServlet - Initializing Servlet 'dispatcherServlet'
+2025-10-15 15:10:27 [RMI TCP Connection(7)-127.0.0.1] INFO  o.s.web.servlet.DispatcherServlet - Completed initialization in 1 ms
+2025-10-15 17:01:49 [RMI TCP Connection(123)-127.0.0.1] INFO  o.s.b.a.SpringApplicationAdminMXBeanRegistrar$SpringApplicationAdmin - Application shutdown requested.
+2025-10-15 17:01:49 [RMI TCP Connection(123)-127.0.0.1] INFO  o.s.b.w.e.tomcat.GracefulShutdown - Commencing graceful shutdown. Waiting for active requests to complete
+2025-10-15 17:01:50 [tomcat-shutdown] INFO  o.s.b.w.e.tomcat.GracefulShutdown - Graceful shutdown complete
+2025-10-15 17:01:50 [RMI TCP Connection(123)-127.0.0.1] INFO  o.s.b.w.e.tomcat.GracefulShutdown - Commencing graceful shutdown. Waiting for active requests to complete
+2025-10-15 17:01:50 [tomcat-shutdown] INFO  o.s.b.w.e.tomcat.GracefulShutdown - Graceful shutdown complete
+2025-10-15 17:01:50 [RMI TCP Connection(123)-127.0.0.1] INFO  o.a.catalina.core.StandardService - Stopping service [Tomcat]
+2025-10-15 17:01:50 [RMI TCP Connection(123)-127.0.0.1] INFO  o.s.o.j.LocalContainerEntityManagerFactoryBean - Closing JPA EntityManagerFactory for persistence unit 'default'
+2025-10-15 17:01:50 [RMI TCP Connection(123)-127.0.0.1] INFO  com.zaxxer.hikari.HikariDataSource - HikariPool-1 - Shutdown initiated...
+2025-10-15 17:01:50 [RMI TCP Connection(123)-127.0.0.1] INFO  com.zaxxer.hikari.HikariDataSource - HikariPool-1 - Shutdown completed.
+2025-10-15 17:04:39 [main] INFO  c.b.p.PolicyManagementServiceApplication - Starting PolicyManagementServiceApplication using Java 21.0.7 with PID 26604 (D:\sid\TRAVELREQUETMANAGEMENT\bwc-microservices\policymanagement\target\classes started by sdarade in D:\sid\TRAVELREQUETMANAGEMENT\bwc-microservices\policymanagement)
+2025-10-15 17:04:39 [main] DEBUG c.b.p.PolicyManagementServiceApplication - Running with Spring Boot v3.5.6, Spring v6.2.11
+2025-10-15 17:04:39 [main] INFO  c.b.p.PolicyManagementServiceApplication - No active profile set, falling back to 1 default profile: "default"
+2025-10-15 17:04:40 [main] INFO  o.s.d.r.c.RepositoryConfigurationDelegate - Bootstrapping Spring Data JPA repositories in DEFAULT mode.
+2025-10-15 17:04:40 [main] INFO  o.s.d.r.c.RepositoryConfigurationDelegate - Finished Spring Data repository scanning in 35 ms. Found 6 JPA repository interfaces.
+2025-10-15 17:04:40 [main] INFO  o.s.b.w.e.tomcat.TomcatWebServer - Tomcat initialized with port 9012 (http)
+2025-10-15 17:04:40 [main] INFO  o.a.catalina.core.StandardService - Starting service [Tomcat]
+2025-10-15 17:04:40 [main] INFO  o.a.catalina.core.StandardEngine - Starting Servlet engine: [Apache Tomcat/10.1.46]
+2025-10-15 17:04:40 [main] INFO  o.a.c.c.C.[.[localhost].[/policy] - Initializing Spring embedded WebApplicationContext
+2025-10-15 17:04:40 [main] INFO  o.s.b.w.s.c.ServletWebServerApplicationContext - Root WebApplicationContext: initialization completed in 1199 ms
+2025-10-15 17:04:40 [main] INFO  o.h.jpa.internal.util.LogHelper - HHH000204: Processing PersistenceUnitInfo [name: default]
+2025-10-15 17:04:41 [main] INFO  org.hibernate.Version - HHH000412: Hibernate ORM core version 6.6.29.Final
+2025-10-15 17:04:41 [main] INFO  o.h.c.i.RegionFactoryInitiator - HHH000026: Second-level cache disabled
+2025-10-15 17:04:41 [main] INFO  o.s.o.j.p.SpringPersistenceUnitInfo - No LoadTimeWeaver setup: ignoring JPA class transformer
+2025-10-15 17:04:41 [main] INFO  com.zaxxer.hikari.HikariDataSource - HikariPool-1 - Starting...
+2025-10-15 17:04:41 [main] INFO  com.zaxxer.hikari.pool.HikariPool - HikariPool-1 - Added connection org.postgresql.jdbc.PgConnection@5a5a973c
+2025-10-15 17:04:41 [main] INFO  com.zaxxer.hikari.HikariDataSource - HikariPool-1 - Start completed.
+2025-10-15 17:04:41 [main] WARN  org.hibernate.orm.deprecation - HHH90000025: PostgreSQLDialect does not need to be specified explicitly using 'hibernate.dialect' (remove the property setting and it will be selected by default)
+2025-10-15 17:04:41 [main] INFO  o.hibernate.orm.connections.pooling - HHH10001005: Database info:
+	Database JDBC URL [Connecting through datasource 'HikariDataSource (HikariPool-1)']
+	Database driver: undefined/unknown
+	Database version: 18.0
+	Autocommit mode: undefined/unknown
+	Isolation level: undefined/unknown
+	Minimum pool size: undefined/unknown
+	Maximum pool size: undefined/unknown
+2025-10-15 17:04:42 [main] INFO  o.h.e.t.j.p.i.JtaPlatformInitiator - HHH000489: No JTA platform available (set 'hibernate.transaction.jta.platform' to enable JTA platform integration)
+2025-10-15 17:04:42 [main] INFO  o.s.o.j.LocalContainerEntityManagerFactoryBean - Initialized JPA EntityManagerFactory for persistence unit 'default'
+2025-10-15 17:04:42 [main] INFO  o.s.d.j.r.query.QueryEnhancerFactory - Hibernate is in classpath; If applicable, HQL parser will be used.
+2025-10-15 17:04:44 [main] INFO  o.s.b.w.e.tomcat.TomcatWebServer - Tomcat started on port 9012 (http) with context path '/policy'
+2025-10-15 17:04:44 [main] INFO  o.s.b.w.e.tomcat.TomcatWebServer - Tomcat initialized with port 9112 (http)
+2025-10-15 17:04:44 [main] INFO  o.a.catalina.core.StandardService - Starting service [Tomcat]
+2025-10-15 17:04:44 [main] INFO  o.a.catalina.core.StandardEngine - Starting Servlet engine: [Apache Tomcat/10.1.46]
+2025-10-15 17:04:44 [main] INFO  o.a.c.c.C.[Tomcat-1].[localhost].[/] - Initializing Spring embedded WebApplicationContext
+2025-10-15 17:04:44 [main] INFO  o.s.b.w.s.c.ServletWebServerApplicationContext - Root WebApplicationContext: initialization completed in 50 ms
+2025-10-15 17:04:44 [main] INFO  o.s.b.a.e.web.EndpointLinksResolver - Exposing 4 endpoints beneath base path '/actuator'
+2025-10-15 17:04:44 [main] INFO  o.s.b.w.e.tomcat.TomcatWebServer - Tomcat started on port 9112 (http) with context path '/'
+2025-10-15 17:04:44 [main] INFO  c.b.p.PolicyManagementServiceApplication - Started PolicyManagementServiceApplication in 5.099 seconds (process running for 5.429)
+2025-10-15 17:04:44 [RMI TCP Connection(7)-127.0.0.1] INFO  o.a.c.c.C.[.[localhost].[/policy] - Initializing Spring DispatcherServlet 'dispatcherServlet'
+2025-10-15 17:04:44 [RMI TCP Connection(7)-127.0.0.1] INFO  o.s.web.servlet.DispatcherServlet - Initializing Servlet 'dispatcherServlet'
+2025-10-15 17:04:44 [RMI TCP Connection(7)-127.0.0.1] INFO  o.s.web.servlet.DispatcherServlet - Completed initialization in 1 ms
