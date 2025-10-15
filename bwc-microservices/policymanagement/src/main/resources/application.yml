@@ -1,0 +1,136 @@
+# =========================================================
+# 🌍 Application Info
+# =========================================================
+spring:
+  application:
+    name: policy-management-service
+#  profiles:
+#    active: prod
+
+  lifecycle:
+    timeout-per-shutdown-phase: 30s
+
+  datasource:
+    url: jdbc:postgresql://localhost:5432/PolicyDatabase
+    username: TravelApplication123
+    password: TravelApplication123
+    driver-class-name: org.postgresql.Driver
+    hikari:
+      maximum-pool-size: 30
+      minimum-idle: 10
+      idle-timeout: 300000
+      connection-timeout: 30000
+      max-lifetime: 600000
+
+  jpa:
+    hibernate:
+      ddl-auto: update
+    database-platform: org.hibernate.dialect.PostgreSQLDialect
+    show-sql: false
+    open-in-view: false
+    properties:
+      hibernate:
+        format_sql: true
+        jdbc:
+          batch_size: 50
+          fetch_size: 100
+        order_inserts: true
+        order_updates: true
+        generate_statistics: false
+
+  cache:
+    type: caffeine
+    caffeine:
+      spec: maximumSize=1000,expireAfterWrite=600s
+
+# =========================================================
+# ⚙️ Server Configuration
+# =========================================================
+server:
+  address: 0.0.0.0
+  port: 9012
+  servlet:
+    context-path: /policy
+  tomcat:
+    connection-timeout: 10s    # ✅ fixed (under tomcat, no deprecation)
+    max-threads: 200
+    min-spare-threads: 20
+    accept-count: 200
+    max-connections: 5000
+  shutdown: graceful
+
+# =========================================================
+# 📊 Actuator + Metrics + Prometheus (Unified)
+# =========================================================
+management:
+  server:
+    port: 9112
+
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics,env
+  endpoint:
+    health:
+      show-details: always
+    metrics:
+      enabled: true
+    env:
+      enabled: true
+
+  health:
+    livenessstate:
+      enabled: true
+    readinessstate:
+      enabled: true
+    group:
+      readiness:
+        include: db,ping
+      liveness:
+        include: ping
+
+  metrics:
+    tags:
+      application: ${spring.application.name}
+
+  prometheus:
+    metrics:
+      export:
+        enabled: true   # ✅ fixed (replaced deprecated key)
+        step: 30s
+
+# =========================================================
+# 🌐 External Service URLs
+# =========================================================
+services:
+  employee:
+    url: http://localhost:9010/ems
+  travel-request:
+    url: http://localhost:9015/travel-management
+  workflow:
+    url: http://localhost:9013/workflow
+  notification:
+    url: http://localhost:9014/notification
+
+# =========================================================
+# 🔒 Security
+# =========================================================
+jwt:
+  secret: MySuperSecureAesEncryptionKey123456
+  expiration-seconds: 3600
+
+# =========================================================
+# 🪵 Logging
+# =========================================================
+logging:
+  level:
+    root: INFO
+    com.bwc.policy_management: DEBUG
+  pattern:
+    console: "%d{yyyy-MM-dd HH:mm:ss} [%thread] %-5level %logger{36} - %msg%n"
+  file:
+    name: logs/policy-management.log
+  logback:
+    rollingpolicy:
+      max-file-size: 10MB
+      max-history: 10

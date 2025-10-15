@@ -1,0 +1,185 @@
+# =========================================================
+# 🌍 Application Info
+# =========================================================
+spring:
+  application:
+    name: approval-workflow-service
+#  profiles:
+#    active: dev
+
+  datasource:
+    url: jdbc:postgresql://localhost:5432/ApprovalWorkflowDatabase
+    username: TravelApplication123
+    password: TravelApplication123
+    driver-class-name: org.postgresql.Driver
+    hikari:
+      maximum-pool-size: 40
+      minimum-idle: 10
+      connection-timeout: 30000
+      idle-timeout: 300000
+      max-lifetime: 600000
+
+  jpa:
+    hibernate:
+      ddl-auto: update
+    show-sql: true
+    open-in-view: false
+    properties:
+      hibernate:
+        format_sql: true
+        jdbc:
+          lob.non_contextual_creation: true
+          batch_size: 50
+          fetch_size: 100
+        order_inserts: true
+        order_updates: true
+        batch_versioned_data: true
+
+  cloud:
+    openfeign:
+      client:
+        config:
+          default:
+            connect-timeout: 3000
+            read-timeout: 7000
+            logger-level: basic
+
+# =========================================================
+# ⚙️ Server Configuration
+# =========================================================
+server:
+  address: 0.0.0.0
+  port: 9013
+  servlet:
+    context-path: /workflow
+  tomcat:
+    connection-timeout: 10s      # ✅ moved from root (non-deprecated)
+    max-threads: 200
+    min-spare-threads: 20
+    accept-count: 200
+    max-connections: 5000
+
+# =========================================================
+# ⚙️ Workflow Configuration
+# =========================================================
+workflow:
+  default-priority: NORMAL
+  steps:
+    manager-approval:
+      time-limit-hours: 48
+    hr-approval:
+      time-limit-hours: 72
+    travel-desk-approval:
+      time-limit-hours: 24
+    finance-approval:
+      time-limit-hours: 48
+
+# =========================================================
+# 🌐 External Service URLs
+# =========================================================
+services:
+  employee:
+    url: http://localhost:9010/ems
+  policy:
+    url: http://localhost:9012/policy
+  travel-request:
+    url: http://localhost:9015/travel-management
+  notification:
+    url: http://localhost:9014/notification
+
+# =========================================================
+# 🧱 Resilience4j Circuit Breakers
+# =========================================================
+resilience4j:
+  circuitbreaker:
+    instances:
+      travel-request-service:
+        register-health-indicator: true
+        sliding-window-size: 10
+        minimum-number-of-calls: 5
+        permitted-number-of-calls-in-half-open-state: 3
+        automatic-transition-from-open-to-half-open-enabled: true
+        wait-duration-in-open-state: 10s
+        failure-rate-threshold: 50
+
+      notification-service:
+        register-health-indicator: true
+        sliding-window-size: 10
+        minimum-number-of-calls: 5
+        permitted-number-of-calls-in-half-open-state: 3
+        automatic-transition-from-open-to-half-open-enabled: true
+        wait-duration-in-open-state: 10s
+        failure-rate-threshold: 50
+
+  retry:
+    instances:
+      travel-request-service:
+        max-attempts: 3
+        wait-duration: 2s
+      notification-service:
+        max-attempts: 3
+        wait-duration: 2s
+
+# =========================================================
+# 🔐 Security / JWT Configuration
+# =========================================================
+jwt:
+  secret: MySuperSecureAesEncryptionKey123456
+  expiration-seconds: 3600
+
+# =========================================================
+# 🔑 Internal Gateway Secret
+# =========================================================
+gateway:
+  internal:
+    secret: bwc-secure-gateway
+
+# =========================================================
+# 🧾 Logging
+# =========================================================
+logging:
+  level:
+    root: INFO
+    com.bwc.approval_workflow_service: DEBUG
+    org.hibernate.SQL: DEBUG
+    org.springframework.web: DEBUG
+    org.springframework.cloud.openfeign: DEBUG
+    org.springframework.scheduling: DEBUG
+    org.springframework.cloud.circuitbreaker: DEBUG
+  pattern:
+    console: "%d{yyyy-MM-dd HH:mm:ss} [%thread] %-5level %logger{36} - %msg%n"
+
+# =========================================================
+# 📊 Actuator + Prometheus (Unified)
+# =========================================================
+management:
+  server:
+    port: 9113
+
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics,env,circuitbreakers
+  endpoint:
+    health:
+      show-details: always
+      show-components: always
+    metrics:
+      enabled: true
+    env:
+      enabled: true
+    circuitbreakers:
+      enabled: true
+  info:
+    env:
+      enabled: true
+
+  metrics:
+    tags:
+      application: ${spring.application.name}
+
+  prometheus:
+    metrics:
+      export:
+        enabled: true    # ✅ replaced deprecated key
+        step: 30s

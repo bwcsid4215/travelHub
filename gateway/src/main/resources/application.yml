@@ -1,7 +1,6 @@
-server:
-  address: 0.0.0.0   # ✅ Listen on all interfaces
-  port: 8088
-
+# =========================================================
+# 🌍 Application Info
+# =========================================================
 spring:
   application:
     name: api-gateway
@@ -13,23 +12,11 @@ spring:
         corsConfigurations:
           '[/**]':
             allowedOrigins:
-              - "http://bwc-90.brainwaveconsulting.co.in:3000"
-              - "http://bwc-90.brainwaveconsulting.co.in:3001"
-              - "http://bwc-90.brainwaveconsulting.co.in:3002"
-              - "http://bwc-90.brainwaveconsulting.co.in:3003"
-              - "http://bwc-72.brainwaveconsulting.co.in:3000"
-              - "http://bwc-72.brainwaveconsulting.co.in:3001"
-              - "http://bwc-72.brainwaveconsulting.co.in:3003"
               - "http://localhost:3000"
               - "http://localhost:3001"
-              - "http://localhost:3002"
-              - "http://localhost:3003"
-            allowedMethods:
-              - GET
-              - POST
-              - PUT
-              - DELETE
-              - OPTIONS
+              - "http://bwc-90.brainwaveconsulting.co.in:3000"
+              - "http://bwc-90.brainwaveconsulting.co.in:3001"
+            allowedMethods: [GET, POST, PUT, DELETE, OPTIONS]
             allowedHeaders: "*"
             exposedHeaders:
               - Authorization
@@ -38,33 +25,45 @@ spring:
 
       # ✅ ROUTES CONFIGURATION
       routes:
-        # 🧩 Employee Service
         - id: employee-service
-          uri: http://localhost:8080
+          uri: http://localhost:9010
           predicates:
             - Path=/ems/**
           filters:
             - AddRequestHeader=X-Internal-Gateway-Secret, bwc-secure-gateway
 
-        # 🧩 Travel Request Management Service
-        - id: travel-request-management
-          uri: http://localhost:8090
+        - id: auth-service
+          uri: http://localhost:9011
           predicates:
-            - Path=/travel-management/**
+            - Path=/auth/**
           filters:
             - AddRequestHeader=X-Internal-Gateway-Secret, bwc-secure-gateway
 
-        # 🧩 Approval Workflow Service
-        - id: approval-workflow-service
-          uri: http://localhost:8086
+        - id: policy-service
+          uri: http://localhost:9012
           predicates:
-            - Path=/api/workflows/**,
-                   /api/workflow-configs/**,
-                   /api/manager/**,
-                   /api/finance/**,
-                   /api/hr/**,
-                   /api/travel-desk/**,
-                   /api/admin/**
+            - Path=/policy/**
+          filters:
+            - AddRequestHeader=X-Internal-Gateway-Secret, bwc-secure-gateway
+
+        - id: workflow-service
+          uri: http://localhost:9013
+          predicates:
+            - Path=/workflow/**
+          filters:
+            - AddRequestHeader=X-Internal-Gateway-Secret, bwc-secure-gateway
+
+        - id: notification-service
+          uri: http://localhost:9014
+          predicates:
+            - Path=/notification/**
+          filters:
+            - AddRequestHeader=X-Internal-Gateway-Secret, bwc-secure-gateway
+
+        - id: travel-request-management
+          uri: http://localhost:9015
+          predicates:
+            - Path=/travel-management/**
           filters:
             - AddRequestHeader=X-Internal-Gateway-Secret, bwc-secure-gateway
 
@@ -78,17 +77,76 @@ spring:
         - RemoveRequestHeader=Upgrade
         - RemoveRequestHeader=Proxy-Authorization
 
-# 🔐 JWT Config (used for token verification & role forwarding)
+      # ⚙️ Enable response time tracing & detailed metrics
+      httpclient:
+        connect-timeout: 3000
+        response-timeout: 10s
+        pool:
+          type: elastic
+          max-connections: 2000
+          max-idle-time: 60s
+
+# =========================================================
+# ⚙️ Server Configuration
+# =========================================================
+server:
+  address: 0.0.0.0
+  port: 9016
+  tomcat:
+    connection-timeout: 10s     # ✅ Fixed: moved under tomcat (no deprecation)
+    max-threads: 300
+    min-spare-threads: 20
+    accept-count: 300
+    max-connections: 5000
+
+# =========================================================
+# 🔐 Security / JWT Config
+# =========================================================
 jwt:
-  secret: MySuperSecureAesEncryptionKey123456   # ✅ SAME as Auth & Workflow services
+  secret: MySuperSecureAesEncryptionKey123456
   expiration-seconds: 3600
 
+# =========================================================
 # 🔑 Internal Gateway Shared Secret
+# =========================================================
 gateway:
   internal:
-    secret: bwc-secure-gateway                   # ✅ SAME across Gateway + Workflow
+    secret: bwc-secure-gateway
 
+# =========================================================
+# 🧾 Logging
+# =========================================================
 logging:
   level:
-    org.springframework.cloud.gateway: DEBUG
+    root: INFO
+    org.springframework.cloud.gateway: INFO
+    org.springframework.web.reactive: INFO
+    org.springframework.http.server.reactive: INFO
     com.bwc.gateway: DEBUG
+  pattern:
+    console: "%d{yyyy-MM-dd HH:mm:ss} [%thread] %-5level %logger{36} - %msg%n"
+  file:
+    name: logs/api-gateway.log
+  logback:
+    rollingpolicy:
+      max-file-size: 10MB
+      max-history: 10
+
+# =========================================================
+# 📊 Actuator
+# =========================================================
+management:
+  server:
+    port: 9116
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics,env,threaddump,heapdump
+  endpoint:
+    health:
+      show-details: always
+      show-components: always
+    metrics:
+      enabled: true
+    env:
+      enabled: true
