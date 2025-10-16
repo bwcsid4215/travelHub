@@ -156,7 +156,11 @@
 		    <artifactId>spring-kafka</artifactId>
 		</dependency>
 
-		
+		<dependency>
+		  <groupId>io.minio</groupId>
+		  <artifactId>minio</artifactId>
+		  <version>8.5.4</version>
+		</dependency>
 		
 		
 		
