@@ -1,9 +1,9 @@
 package com.bwc.employee_management_service.mapper;
 
+import java.util.stream.Collectors;
+
 import com.bwc.employee_management_service.dto.ProjectResponse;
 import com.bwc.employee_management_service.entity.Project;
-
-import java.util.stream.Collectors;
 
 public class ProjectMapper {
 

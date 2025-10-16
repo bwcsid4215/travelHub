@@ -52,12 +52,13 @@ public class Employee {
     private String email;
 
     private String phoneNumber;
-    
+
     @Column(nullable = false)
     private String department;
-    
+
     private String level;
 
+    @Column(name = "is_active", nullable = false)
     @Builder.Default
     private Boolean isActive = true;
 
@@ -88,7 +89,7 @@ public class Employee {
     private Set<Project> projects = new HashSet<>();
 
     private Date dateJoined;
-    
+
     @Column(nullable = false, updatable = false)
     @CreationTimestamp
     private LocalDateTime createdAt;
@@ -96,5 +97,4 @@ public class Employee {
     @Column(nullable = false)
     @UpdateTimestamp
     private LocalDateTime updatedAt;
-
 }

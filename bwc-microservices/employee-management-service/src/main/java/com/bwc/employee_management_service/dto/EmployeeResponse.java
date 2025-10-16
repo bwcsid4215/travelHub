@@ -11,7 +11,7 @@ import java.util.UUID;
 @Schema(description = "Response DTO containing employee details")
 public class EmployeeResponse {
 
-    @Schema(description = "Unique identifier of the employee", 
+    @Schema(description = "Unique identifier of the employee",
             example = "123e4567-e89b-12d3-a456-426614174000", accessMode = Schema.AccessMode.READ_ONLY)
     private UUID employeeId;
 
@@ -31,9 +31,9 @@ public class EmployeeResponse {
     private String level;
 
     @Schema(description = "Indicates if the employee is active", example = "true")
-    private boolean active;
+    private boolean active; // ✅ Changed from isActive → active
 
-    @Schema(description = "Manager's UUID", 
+    @Schema(description = "Manager's UUID",
             example = "123e4567-e89b-12d3-a456-426614174000")
     private UUID managerId;
 
@@ -45,15 +45,15 @@ public class EmployeeResponse {
 
     @Schema(description = "Set of assigned role names", example = "[\"HR\", \"MANAGER\"]")
     private Set<String> roles;
-    
+
     @Schema(description = "Set of assigned project UUIDs")
     private Set<UUID> projectIds;
-    
-    @Schema(description = "Creation timestamp", 
+
+    @Schema(description = "Creation timestamp",
             example = "2023-12-07T10:30:00.000Z", accessMode = Schema.AccessMode.READ_ONLY)
     private LocalDateTime createdAt;
 
-    @Schema(description = "Last update timestamp", 
+    @Schema(description = "Last update timestamp",
             example = "2023-12-07T10:30:00.000Z", accessMode = Schema.AccessMode.READ_ONLY)
     private LocalDateTime updatedAt;
 }

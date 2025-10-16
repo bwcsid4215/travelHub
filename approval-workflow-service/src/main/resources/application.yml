@@ -22,7 +22,7 @@ spring:
   jpa:
     hibernate:
       ddl-auto: update
-    show-sql: true
+    show-sql: false
     open-in-view: false
     properties:
       hibernate:
@@ -53,7 +53,7 @@ spring:
       group-id: workflow-group
       auto-offset-reset: earliest
       key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
-      value-deserializer: org.springframework.kafka.support.serializer.ErrorHandlingDeserializer
+      value-deserializer: org.springframework.kafka.support.serializer.JsonDeserializer
       properties:
         spring.deserializer.value.delegate.class: org.springframework.kafka.support.serializer.JsonDeserializer
         spring.json.trusted.packages: "*"
@@ -164,11 +164,12 @@ logging:
   level:
     root: INFO
     com.bwc.approval_workflow_service: DEBUG
-    org.hibernate.SQL: DEBUG
-    org.springframework.web: DEBUG
-    org.springframework.cloud.openfeign: DEBUG
-    org.springframework.scheduling: DEBUG
-    org.springframework.cloud.circuitbreaker: DEBUG
+    org.hibernate.SQL: off                  # 🚫 Disable SQL query logs
+    org.hibernate.type.descriptor.sql.BasicBinder: off   # 🚫 Disable parameter logs
+    org.springframework.web: INFO
+    org.springframework.cloud.openfeign: INFO
+    org.springframework.scheduling: INFO
+    org.springframework.cloud.circuitbreaker: INFO
   pattern:
     console: "%d{yyyy-MM-dd HH:mm:ss} [%thread] %-5level %logger{36} - %msg%n"
 

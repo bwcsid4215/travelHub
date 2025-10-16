@@ -1,18 +1,19 @@
 package com.bwc.employee_management_service.mapper;
 
+import java.util.Collections;
+import java.util.Set;
+import java.util.UUID;
+import java.util.stream.Collectors;
+
+import org.mapstruct.Mapper;
+import org.mapstruct.Mapping;
+import org.mapstruct.Named;
+
 import com.bwc.employee_management_service.dto.EmployeeRequest;
 import com.bwc.employee_management_service.dto.EmployeeResponse;
 import com.bwc.employee_management_service.entity.Employee;
 import com.bwc.employee_management_service.entity.Project;
 import com.bwc.employee_management_service.entity.Role;
-import org.mapstruct.Mapper;
-import org.mapstruct.Mapping;
-import org.mapstruct.Named;
-
-import java.util.Collections;
-import java.util.Set;
-import java.util.UUID;
-import java.util.stream.Collectors;
 
 @Mapper(componentModel = "spring")
 public interface EmployeeMapper {
@@ -26,14 +27,15 @@ public interface EmployeeMapper {
     @Mapping(target = "createdAt", ignore = true)
     @Mapping(target = "updatedAt", ignore = true)
     @Mapping(target = "dateJoined", expression = "java(new java.util.Date())")
-    @Mapping(target = "isActive", constant = "true")
+    @Mapping(target = "isActive", expression = "java(true)") // ✅ Correct boolean mapping
     Employee toEntity(EmployeeRequest request);
 
     // ✅ Converts Employee entity → EmployeeResponse DTO
+    @Mapping(target = "active", source = "isActive") // ✅ Correct mapping name
     @Mapping(target = "managerId", source = "manager.employeeId")
     @Mapping(target = "managerName", source = "manager.fullName")
     @Mapping(target = "roleIds", source = "roles", qualifiedByName = "mapRolesToIds")
-    @Mapping(target = "roles", source = "roles", qualifiedByName = "mapRolesToNames") // 🔥 new
+    @Mapping(target = "roles", source = "roles", qualifiedByName = "mapRolesToNames")
     @Mapping(target = "projectIds", source = "projects", qualifiedByName = "mapProjectsToIds")
     EmployeeResponse toResponse(Employee employee);
 
