@@ -46,4 +46,6 @@ public interface ApprovalWorkflowService {
     ApprovalWorkflowDTO markBookingUploaded(UUID workflowId, UUID uploadedBy);
     
     ApprovalWorkflowDTO uploadBills(UUID workflowId, Double actualCost, UUID uploadedBy);
+    
+    void recordAction(UUID workflowId, String step, String action, String comments);
 }

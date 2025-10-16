@@ -852,5 +852,26 @@ public class ApprovalWorkflowServiceImpl implements ApprovalWorkflowService {
                     stepName, role, employeeId, source);
         }
     }
+    
+    @Override
+    @Transactional
+    public void recordAction(UUID workflowId, String step, String action, String comments) {
+        var workflow = workflowRepository.findById(workflowId)
+                .orElseThrow(() -> new ResourceNotFoundException("Workflow not found with id: " + workflowId));
+
+        ApprovalAction approvalAction = ApprovalAction.builder()
+                .workflowId(workflowId)
+                .travelRequestId(workflow.getTravelRequestId())
+                .approverRole(workflow.getCurrentApproverRole())
+                .approverId(workflow.getCurrentApproverId())
+                .action(action.toUpperCase())
+                .step(step)
+                .comments(comments)
+                .actionTakenAt(LocalDateTime.now())
+                .build();
+
+        actionRepository.save(approvalAction);
+        log.info("📝 Recorded manual action [{}:{}] on workflow {}", step, action, workflowId);
+    }
 
 }

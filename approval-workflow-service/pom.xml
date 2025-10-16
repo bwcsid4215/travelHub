@@ -119,6 +119,12 @@
 		    <groupId>org.springframework.kafka</groupId>
 		    <artifactId>spring-kafka</artifactId>
 		</dependency>
+			
+		<dependency>
+		  <groupId>io.temporal</groupId>
+		  <artifactId>temporal-sdk</artifactId>
+		  <version>1.22.0</version>
+		</dependency>
 
 		
     </dependencies>
