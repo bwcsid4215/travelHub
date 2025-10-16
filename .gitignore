@@ -1,0 +1,88 @@
+# ============================================
+# ☕ JAVA / SPRING BOOT PROJECT .gitignore
+# ============================================
+
+# --- Maven ---
+target/
+!.mvn/wrapper/maven-wrapper.jar
+.mvn/
+pom.xml.tag
+pom.xml.releaseBackup
+pom.xml.versionsBackup
+pom.xml.next
+release.properties
+
+# --- Gradle (if any submodule uses it) ---
+.gradle/
+build/
+!gradle/wrapper/gradle-wrapper.jar
+
+# --- Logs & Runtime Files ---
+logs/
+*.log
+*.log.*
+*.out
+*.err
+
+# --- IntelliJ IDEA ---
+.idea/
+*.iml
+*.iws
+*.ipr
+out/
+
+# --- Eclipse / STS ---
+.project
+.classpath
+.settings/
+.apt_generated/
+.springBeans/
+.sts4-cache/
+
+# --- VS Code ---
+.vscode/
+
+# --- OS generated files ---
+.DS_Store
+Thumbs.db
+
+# --- Build Artifacts ---
+*.jar
+*.war
+*.ear
+
+# --- Temporary files ---
+*.tmp
+*.swp
+*.swo
+*.bak
+*~
+~$*
+
+# --- Test Reports ---
+test-output/
+surefire-reports/
+jacoco.exec
+
+# --- Docker ---
+*.pid
+*.seed
+*.pid.lock
+
+# --- Environment / Credentials ---
+.env
+*.env
+
+# --- Node Modules (if frontend code exists) ---
+node_modules/
+
+# --- Specific IDE workspace files (common in multi-module setups) ---
+*/.idea/
+*/target/
+*/logs/
+*/out/
+*/build/
+
+# ============================================
+# ✅ End of .gitignore
+# ============================================
