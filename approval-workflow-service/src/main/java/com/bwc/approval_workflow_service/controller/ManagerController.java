@@ -1,10 +1,11 @@
-// src/main/java/com/bwc/approval_workflow_service/controller/ManagerController.java
 package com.bwc.approval_workflow_service.controller;
 
 import com.bwc.approval_workflow_service.workflow.PreTravelWorkflow;
 import io.temporal.client.WorkflowClient;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+
+import java.util.UUID;
 
 @RestController
 @RequestMapping("/api/manager")
@@ -17,18 +18,24 @@ public class ManagerController {
     }
 
     @PostMapping("/{travelRequestId}/approve")
-    public ResponseEntity<String> approve(@PathVariable String travelRequestId,
+    public ResponseEntity<String> approve(@PathVariable UUID travelRequestId,
                                           @RequestParam(required = false) String comments) {
-        PreTravelWorkflow stub = workflowClient.newWorkflowStub(PreTravelWorkflow.class, travelRequestId);
+
+        String workflowId = travelRequestId + ":pre";
+        PreTravelWorkflow stub = workflowClient.newWorkflowStub(PreTravelWorkflow.class, workflowId);
         stub.managerAction("APPROVE", comments);
-        return ResponseEntity.ok("Manager approved " + travelRequestId);
+
+        return ResponseEntity.ok("Manager approved travel request " + travelRequestId);
     }
 
     @PostMapping("/{travelRequestId}/reject")
-    public ResponseEntity<String> reject(@PathVariable String travelRequestId,
+    public ResponseEntity<String> reject(@PathVariable UUID travelRequestId,
                                          @RequestParam(required = false) String comments) {
-        PreTravelWorkflow stub = workflowClient.newWorkflowStub(PreTravelWorkflow.class, travelRequestId);
+
+        String workflowId = travelRequestId + ":pre";
+        PreTravelWorkflow stub = workflowClient.newWorkflowStub(PreTravelWorkflow.class, workflowId);
         stub.managerAction("REJECT", comments);
-        return ResponseEntity.ok("Manager rejected " + travelRequestId);
+
+        return ResponseEntity.ok("Manager rejected travel request " + travelRequestId);
     }
 }

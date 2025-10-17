@@ -1,27 +1,40 @@
 package com.bwc.approval_workflow_service.kafka;
 
-import com.bwc.approval_workflow_service.service.ApprovalWorkflowService;
 import com.bwc.approval_workflow_service.dto.TravelRequestProxyDTO;
+import io.temporal.client.WorkflowClient;
+import io.temporal.client.WorkflowOptions;
+import org.springframework.kafka.annotation.KafkaListener;
+import org.springframework.stereotype.Component;
+import com.bwc.approval_workflow_service.workflow.PreTravelWorkflow;
+import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.kafka.annotation.KafkaListener;
-import org.springframework.stereotype.Service;
 
+@Component
 @Slf4j
-@Service
 @RequiredArgsConstructor
 public class TravelRequestConsumer {
 
-    private final ApprovalWorkflowService workflowService;
+    private final WorkflowClient workflowClient;
 
     @KafkaListener(topics = "travel-request-events", groupId = "workflow-group")
-    public void consumeTravelRequest(TravelRequestProxyDTO travelRequest) {
-        log.info("📥 Received travel request event: {}", travelRequest);
+    public void consumeTravelRequest(TravelRequestProxyDTO travel) {
+        log.info("📥 Received travel request event: {}", travel);
+        String workflowId = travel.getTravelRequestId().toString() + ":pre";
+
+        PreTravelWorkflow stub = workflowClient.newWorkflowStub(
+                PreTravelWorkflow.class,
+                WorkflowOptions.newBuilder()
+                        .setTaskQueue("TRAVEL_TASK_QUEUE")
+                        .setWorkflowId(workflowId)
+                        .build());
+
+        // Start non-blocking
         try {
-            workflowService.initiateWorkflow(travelRequest, "PRE_TRAVEL", travelRequest.getEstimatedBudget());
-            log.info("✅ Workflow initiated for TravelRequest ID: {}", travelRequest.getTravelRequestId());
+            WorkflowClient.start(() -> stub.start(travel.getTravelRequestId()));
+            log.info("✅ Workflow initiated for TravelRequest ID: {}", travel.getTravelRequestId());
         } catch (Exception e) {
-            log.error("❌ Failed to initiate workflow: {}", e.getMessage(), e);
+            log.error("Failed to start workflow for {}: {}", travel.getTravelRequestId(), e.getMessage(), e);
         }
     }
 }

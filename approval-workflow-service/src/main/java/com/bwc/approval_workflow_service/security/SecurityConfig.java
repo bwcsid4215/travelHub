@@ -24,10 +24,13 @@ public class SecurityConfig {
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
         http
+            // 🚫 Disable CSRF and sessions (stateless microservice)
             .csrf(csrf -> csrf.disable())
             .sessionManagement(sess -> sess.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+
+            // ✅ Authorization rules
             .authorizeHttpRequests(auth -> auth
-                // 🟢 Public endpoints (no auth)
+                // 🟢 Public and documentation endpoints
                 .requestMatchers(
                     "/swagger-ui/**",
                     "/v3/api-docs/**",
@@ -36,27 +39,35 @@ public class SecurityConfig {
                     "/webjars/**",
                     "/swagger-resources/**",
                     "/management/**",
-                    // ✅ Allow both initiation endpoints (for internal service calls)
+                    // ✅ Workflow initiation (from internal Kafka or services)
                     "/api/workflows/initiate",
                     "/api/workflows/initiate-with-travel-request"
                 ).permitAll()
 
-                // 🟢 Role-based endpoints
-                .requestMatchers("/api/manager/**").hasRole("MANAGER")
-                .requestMatchers("/api/finance/**").hasRole("FINANCE")
-                .requestMatchers("/api/hr/**").hasRole("HR")
-                .requestMatchers("/api/travel-desk/**").hasRole("TRAVEL_DESK")
-                .requestMatchers("/api/admin/**").hasRole("ADMIN")
+                // 🟣 Role-based access with INTERNAL override
+                .requestMatchers("/api/manager/**").hasAnyRole("MANAGER", "INTERNAL")
+                .requestMatchers("/api/finance/**").hasAnyRole("FINANCE", "INTERNAL")
+                .requestMatchers("/api/hr/**").hasAnyRole("HR", "INTERNAL")
+                .requestMatchers("/api/travel-desk/**").hasAnyRole("TRAVEL_DESK", "INTERNAL")
+                .requestMatchers("/api/admin/**").hasAnyRole("ADMIN", "INTERNAL")
 
-                // 🟡 Authenticated workflows
+                // 🟡 Internal Workflow Signals (Pre/Post Travel)
+                .requestMatchers("/api/pre/**", "/api/post/**").hasAnyRole(
+                    "MANAGER", "FINANCE", "HR", "TRAVEL_DESK", "INTERNAL"
+                )
+
+                // 🟢 Authenticated workflow service routes
                 .requestMatchers("/api/workflows/**").authenticated()
 
-                // 🔒 Everything else requires auth
+                // 🔒 Any other request still requires authentication
                 .anyRequest().authenticated()
             )
-            // 🧱 Filters order: Gateway → Auth Header → Rest
+
+            // 🧱 Filter chain order: Gateway Secret → Auth Header → Rest
             .addFilterBefore(gatewaySecurityFilter, UsernamePasswordAuthenticationFilter.class)
             .addFilterAfter(gatewayAuthHeaderVerifier, GatewaySecurityFilter.class)
+
+            // 🚫 Disable default form and basic auth
             .httpBasic(httpBasic -> httpBasic.disable())
             .formLogin(form -> form.disable());
 

@@ -1,16 +1,18 @@
 // src/main/java/com/bwc/approval_workflow_service/worker/TemporalWorkerRunner.java
 package com.bwc.approval_workflow_service.worker;
 
-import com.bwc.approval_workflow_service.workflow.impl.PostTravelWorkflowImpl;
-import com.bwc.approval_workflow_service.workflow.impl.PreTravelWorkflowImpl;
-import com.bwc.approval_workflow_service.workflow.impl.TravelActivitiesImpl;
-import io.temporal.client.WorkflowClient;
-import io.temporal.worker.Worker;
-import io.temporal.worker.WorkerFactory;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.stereotype.Component;
 
-@Component
+import com.bwc.approval_workflow_service.activities.TravelActivitiesImpl;
+import com.bwc.approval_workflow_service.workflow.PostTravelWorkflowImpl;
+import com.bwc.approval_workflow_service.workflow.PreTravelWorkflowImpl;
+
+import io.temporal.client.WorkflowClient;
+import io.temporal.worker.Worker;
+import io.temporal.worker.WorkerFactory;
+
+
 public class TemporalWorkerRunner implements CommandLineRunner {
 
     private final WorkflowClient client;

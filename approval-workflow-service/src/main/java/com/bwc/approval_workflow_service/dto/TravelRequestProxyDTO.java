@@ -1,13 +1,10 @@
 package com.bwc.approval_workflow_service.dto;
 
-import lombok.*;
 import java.time.LocalDate;
 import java.util.UUID;
+import lombok.*;
 
-@Data
-@Builder
-@NoArgsConstructor
-@AllArgsConstructor
+@Data @NoArgsConstructor @AllArgsConstructor @Builder
 public class TravelRequestProxyDTO {
     private UUID travelRequestId;
     private UUID employeeId;
@@ -17,7 +14,6 @@ public class TravelRequestProxyDTO {
     private LocalDate endDate;
     private String purpose;
     private Double estimatedBudget;
-    private String travelDestination;
     private String origin;
-    
+    private String travelDestination;
 }

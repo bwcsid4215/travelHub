@@ -1,4 +1,3 @@
-// src/main/java/com/bwc/approval_workflow_service/controller/WorkflowStartController.java
 package com.bwc.approval_workflow_service.controller;
 
 import com.bwc.approval_workflow_service.workflow.PreTravelWorkflow;
@@ -6,6 +5,7 @@ import io.temporal.client.WorkflowClient;
 import io.temporal.client.WorkflowOptions;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import java.util.UUID;
 
 @RestController
 @RequestMapping("/api/workflows")
@@ -19,13 +19,15 @@ public class WorkflowStartController {
 
     @PostMapping("/pre-travel/{travelRequestId}/start")
     public ResponseEntity<String> startPreTravel(@PathVariable String travelRequestId) {
+        UUID requestUUID = UUID.fromString(travelRequestId);
+
         WorkflowOptions options = WorkflowOptions.newBuilder()
                 .setTaskQueue("TRAVEL_TASK_QUEUE")
-                .setWorkflowId(travelRequestId) // important: make it addressable by requestId
+                .setWorkflowId(requestUUID + ":pre")
                 .build();
 
         PreTravelWorkflow wf = workflowClient.newWorkflowStub(PreTravelWorkflow.class, options);
-        WorkflowClient.start(wf::start, travelRequestId);
+        WorkflowClient.start(() -> wf.start(requestUUID));
 
         return ResponseEntity.ok("✅ PRE_TRAVEL started for " + travelRequestId);
     }

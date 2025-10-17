@@ -13,7 +13,6 @@ import org.springframework.web.filter.OncePerRequestFilter;
 
 import java.io.IOException;
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -28,7 +27,7 @@ public class GatewayAuthHeaderVerifier extends OncePerRequestFilter {
             throws ServletException, IOException {
 
         String path = request.getRequestURI();
-        
+
         // 🟢 Skip authentication setup for public endpoints
         if (isPublicEndpoint(path)) {
             System.out.println("🟩 [Workflow] Skipping auth setup for public endpoint: " + path);
@@ -53,20 +52,31 @@ public class GatewayAuthHeaderVerifier extends OncePerRequestFilter {
         System.out.println("🟩 [Workflow] Received X-User-Email: " + userEmail);
         System.out.println("🟩 [Workflow] Received X-User-Roles: " + rolesHeader);
 
-        // For internal service calls (no user context), proceed without authentication
+        // 🟡 Internal service call (no user headers)
         if (userId == null && rolesHeader == null) {
-            System.out.println("🟡 [Workflow] No user context - internal service call");
+            System.out.println("🟡 [Workflow] No user context - internal service call (marking as INTERNAL user)");
+
+            // ✅ Create internal authentication (bypasses 403 for internal workflows)
+            UsernamePasswordAuthenticationToken internalAuth =
+                    new UsernamePasswordAuthenticationToken(
+                            "internal-system",
+                            null,
+                            List.of(new SimpleGrantedAuthority("ROLE_INTERNAL"))
+                    );
+
+            SecurityContextHolder.getContext().setAuthentication(internalAuth);
             filterChain.doFilter(request, response);
             return;
         }
 
-        // If we have user info but missing roles, treat as unauthenticated
+        // ⚠️ User ID present but no roles
         if (userId != null && rolesHeader == null) {
             System.out.println("⚠️ [Workflow] User ID present but no roles - treating as unauthenticated");
             filterChain.doFilter(request, response);
             return;
         }
 
+        // ✅ User with valid roles
         if (userId != null && rolesHeader != null) {
             List<SimpleGrantedAuthority> authorities = Arrays.stream(rolesHeader.split(","))
                     .map(String::trim)
@@ -74,7 +84,6 @@ public class GatewayAuthHeaderVerifier extends OncePerRequestFilter {
                     .map(r -> new SimpleGrantedAuthority("ROLE_" + r))
                     .collect(Collectors.toList());
 
-            // Create authentication token with principal as user ID
             UsernamePasswordAuthenticationToken auth =
                     new UsernamePasswordAuthenticationToken(userId, null, authorities);
 
@@ -88,13 +97,13 @@ public class GatewayAuthHeaderVerifier extends OncePerRequestFilter {
     }
 
     private boolean isPublicEndpoint(String path) {
-        return path.startsWith("/swagger-ui") || 
-               path.startsWith("/v3/api-docs") || 
+        return path.startsWith("/swagger-ui") ||
+               path.startsWith("/v3/api-docs") ||
                path.startsWith("/api-docs") ||
                path.equals("/swagger-ui.html") ||
                path.startsWith("/webjars/") ||
                path.startsWith("/swagger-resources") ||
                path.startsWith("/management/") ||
-               path.equals("/api/workflows/initiate"); // Add workflow initiation as public
+               path.equals("/api/workflows/initiate");
     }
 }

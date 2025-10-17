@@ -1,18 +1,22 @@
-// src/main/java/com/bwc/approval_workflow_service/workflow/PostTravelWorkflow.java
 package com.bwc.approval_workflow_service.workflow;
 
 import io.temporal.workflow.SignalMethod;
 import io.temporal.workflow.WorkflowInterface;
 import io.temporal.workflow.WorkflowMethod;
+import java.util.UUID;
 
 @WorkflowInterface
 public interface PostTravelWorkflow {
 
     @WorkflowMethod
-    void start(String travelRequestId);
+    void startPost(UUID travelRequestId);
 
-    // signals
-    @SignalMethod void billsUploaded();              // called by employee action
-    @SignalMethod void billsReviewedByTravelDesk();  // called by travel desk
-    @SignalMethod void financeReimbursed();          // called by finance
+    @SignalMethod
+    void billsUploaded(UUID uploadedBy);
+
+    @SignalMethod
+    void billsReviewedByTravelDesk();
+
+    @SignalMethod
+    void financeReimbursed();
 }
