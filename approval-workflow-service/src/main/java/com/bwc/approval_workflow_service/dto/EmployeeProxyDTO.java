@@ -1,6 +1,9 @@
 package com.bwc.approval_workflow_service.dto;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Data;
+import lombok.NoArgsConstructor;
 
-import lombok.*;
 import java.util.Set;
 import java.util.UUID;
 
@@ -16,4 +19,5 @@ public class EmployeeProxyDTO {
     private String level;
     private UUID managerId;
     private Set<String> roles;
+    private Set<UUID> projectIds;
 }

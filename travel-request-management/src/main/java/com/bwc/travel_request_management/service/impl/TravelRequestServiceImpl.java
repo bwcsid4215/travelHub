@@ -47,44 +47,44 @@ public class TravelRequestServiceImpl implements TravelRequestService {
         var employee = employeeServiceClient.getEmployee(dto.getEmployeeId());
         log.info("Employee {} fetched successfully with projects: {}", employee.getFullName(), employee.getProjectIds());
 
-        // ✅ Validate if employee works on the given project
+        // ✅ Validate project
         if (employee.getProjectIds() == null || !employee.getProjectIds().contains(dto.getProjectId())) {
             throw new IllegalArgumentException(
                 String.format("Employee %s is not assigned to the specified project (Project ID: %s)", 
                 employee.getFullName(), dto.getProjectId()));
         }
 
-        // ✅ Check for overlapping requests
+        // ✅ Check overlapping requests
         if (hasOverlappingRequest(dto.getEmployeeId(), dto.getStartDate(), dto.getEndDate())) {
             throw new IllegalArgumentException("Employee already has a travel request for the specified dates");
         }
 
-        // ✅ Create travel request
+        // ✅ Map DTO → Entity
         TravelRequest entity = mapper.toEntity(dto);
         entity.setStatus("DRAFT");
         TravelRequest saved = repository.save(entity);
 
-        // ✅ Build TravelRequestProxyDTO from the saved entity and employee data
+        // ✅ Build proxy for workflow / Kafka
         TravelRequestProxyDTO travelRequestProxy = TravelRequestProxyDTO.builder()
                 .travelRequestId(saved.getTravelRequestId())
                 .employeeId(saved.getEmployeeId())
                 .projectId(saved.getProjectId())
-                .managerId(employee.getManagerId()) // Get manager ID from employee
+                .managerId(dto.getManagerId() != null ? dto.getManagerId() : employee.getManagerId())
                 .startDate(saved.getStartDate())
                 .endDate(saved.getEndDate())
                 .purpose(saved.getPurpose())
                 .estimatedBudget(saved.getEstimatedBudget())
+                .travelDestination(dto.getTravelDestination())
+                .origin(dto.getOrigin())
                 .build();
 
-        // ✅ Trigger workflow with the travel request DTO directly (optimized)
+        // ✅ Publish event only after DB commit
         TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
             @Override
             public void afterCommit() {
                 try {
-	                	travelRequestProducer.sendTravelRequest(travelRequestProxy);
-	                	log.info("✅ Kafka event published for PRE_TRAVEL workflow initiation");
-
-                    log.info("✅ PRE_TRAVEL workflow initiated for request ID: {}", saved.getTravelRequestId());
+                    travelRequestProducer.sendTravelRequest(travelRequestProxy);
+                    log.info("✅ Kafka event published for PRE_TRAVEL workflow initiation");
                 } catch (Exception e) {
                     log.error("❌ Failed to initiate workflow for request {}: {}", saved.getTravelRequestId(), e.getMessage(), e);
                 }
@@ -94,6 +94,7 @@ public class TravelRequestServiceImpl implements TravelRequestService {
         log.info("Travel request created successfully with ID: {}", saved.getTravelRequestId());
         return mapper.toDto(saved);
     }
+
 
     // ... (rest of the methods remain the same)
     @Override

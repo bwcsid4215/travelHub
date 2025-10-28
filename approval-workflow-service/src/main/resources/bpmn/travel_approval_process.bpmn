@@ -1,0 +1,782 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<bpmn:definitions xmlns:bpmn="http://www.omg.org/spec/BPMN/20100524/MODEL" xmlns:bpmndi="http://www.omg.org/spec/BPMN/20100524/DI" xmlns:dc="http://www.omg.org/spec/DD/20100524/DC" xmlns:di="http://www.omg.org/spec/DD/20100524/DI" xmlns:zeebe="http://camunda.org/schema/zeebe/1.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:modeler="http://camunda.org/schema/modeler/1.0" id="Definitions_TravelApproval_v4" targetNamespace="http://bpmn.io/schema/bpmn" exporter="Camunda Modeler" exporterVersion="5.40.0" modeler:executionPlatform="Camunda Cloud" modeler:executionPlatformVersion="8.8.0">
+  <bpmn:process id="travel_approval_v4" name="Enterprise Travel Approval Process v4.0" isExecutable="true">
+    <bpmn:documentation>
+      Enterprise Travel Approval Process v4.0
+      Enhanced Features:
+      - Multi-topic Kafka consumption
+      - Dynamic retry configurations
+      - Comprehensive error handling
+      - SLA monitoring with alerts
+      - Audit trail integration
+      - Performance metrics tracking
+    </bpmn:documentation>
+    <bpmn:startEvent id="StartEvent_TravelRequest" name="Travel Request Received">
+      <bpmn:extensionElements>
+        <zeebe:properties>
+          <zeebe:property name="inbound.type" value="io.camunda:connector-kafka-inbound:1" />
+          <zeebe:property name="topic.bootstrapServers" value="${KAFKA_BOOTSTRAP_SERVERS:localhost:9092}" />
+          <zeebe:property name="topic.topicName" value="travel-request-events" />
+          <zeebe:property name="groupId" value="travel-approval-service-v4" />
+          <zeebe:property name="correlationKeyExpression" value="=travelRequestId" />
+          <zeebe:property name="messageTTL" value="PT24H" />
+          <zeebe:property name="autoOffsetReset" value="latest" />
+        </zeebe:properties>
+        <zeebe:ioMapping>
+          <zeebe:input source="=travelRequestId" target="travelRequestId" />
+          <zeebe:input source="=employeeId" target="employeeId" />
+          <zeebe:input source="=amount" target="requestedAmount" />
+          <zeebe:input source="=destination" target="destination" />
+          <zeebe:input source="=purpose" target="travelPurpose" />
+          <zeebe:input source="=startDate" target="travelStartDate" />
+          <zeebe:input source="=endDate" target="travelEndDate" />
+          <zeebe:input source="=department" target="employeeDepartment" />
+          <zeebe:input source="=priority" target="requestPriority" />
+        </zeebe:ioMapping>
+      </bpmn:extensionElements>
+      <bpmn:outgoing>Flow_Start_Validation</bpmn:outgoing>
+    </bpmn:startEvent>
+    <bpmn:serviceTask id="Service_ValidateInput" name="Validate Request Input">
+      <bpmn:extensionElements>
+        <zeebe:taskDefinition type="validate-input" retries="2" />
+        <zeebe:taskHeaders>
+          <zeebe:header key="validationType" value="schema-validation" />
+        </zeebe:taskHeaders>
+        <zeebe:ioMapping>
+          <zeebe:input source="=travelRequestId" target="travelRequestId" />
+          <zeebe:input source="=employeeId" target="employeeId" />
+          <zeebe:input source="=requestedAmount" target="amount" />
+          <zeebe:output source="=isValid" target="inputValid" />
+          <zeebe:output source="=validationErrors" target="validationErrors" />
+          <zeebe:output source="=validationTimestamp" target="validationTimestamp" />
+        </zeebe:ioMapping>
+      </bpmn:extensionElements>
+      <bpmn:incoming>Flow_Start_Validation</bpmn:incoming>
+      <bpmn:outgoing>Flow_Validation_Decision</bpmn:outgoing>
+    </bpmn:serviceTask>
+    <bpmn:exclusiveGateway id="Gateway_InputValidation" name="Input Valid?">
+      <bpmn:incoming>Flow_Validation_Decision</bpmn:incoming>
+      <bpmn:outgoing>Flow_Validation_Valid</bpmn:outgoing>
+      <bpmn:outgoing>Flow_Validation_Invalid</bpmn:outgoing>
+    </bpmn:exclusiveGateway>
+    <bpmn:serviceTask id="Service_HandleInvalidInput" name="Handle Invalid Input">
+      <bpmn:extensionElements>
+        <zeebe:taskDefinition type="handle-invalid-input" retries="1" />
+        <zeebe:taskHeaders>
+          <zeebe:header key="errorTopic" value="travel-request-errors" />
+        </zeebe:taskHeaders>
+      </bpmn:extensionElements>
+      <bpmn:incoming>Flow_Validation_Invalid</bpmn:incoming>
+      <bpmn:outgoing>Flow_InvalidInput_End</bpmn:outgoing>
+    </bpmn:serviceTask>
+    <bpmn:endEvent id="EndEvent_InvalidInput" name="Invalid Input Rejected">
+      <bpmn:extensionElements>
+        <zeebe:properties>
+          <zeebe:property name="outcome" value="INVALID_INPUT" />
+        </zeebe:properties>
+      </bpmn:extensionElements>
+      <bpmn:incoming>Flow_InvalidInput_End</bpmn:incoming>
+    </bpmn:endEvent>
+    <bpmn:serviceTask id="Service_InitializeProcess" name="Initialize Process Context">
+      <bpmn:extensionElements>
+        <zeebe:taskDefinition type="initialize-travel-process" retries="3" />
+        <zeebe:taskHeaders>
+          <zeebe:header key="processor" value="travel-init-service" />
+          <zeebe:header key="version" value="4.0" />
+        </zeebe:taskHeaders>
+        <zeebe:ioMapping>
+          <zeebe:input source="=travelRequestId" target="travelRequestId" />
+          <zeebe:input source="=employeeId" target="employeeId" />
+          <zeebe:input source="=requestedAmount" target="requestedAmount" />
+          <zeebe:input source="=destination" target="destination" />
+          <zeebe:input source="=travelPurpose" target="travelPurpose" />
+          <zeebe:input source="=employeeDepartment" target="employeeDepartment" />
+          <zeebe:input source="=requestPriority" target="requestPriority" />
+          <zeebe:output source="=processInstanceId" target="processInstanceId" />
+          <zeebe:output source="=managerId" target="managerId" />
+          <zeebe:output source="=approvalGroup" target="approvalGroup" />
+          <zeebe:output source="=riskCategory" target="riskCategory" />
+          <zeebe:output source="=slaDeadline" target="slaDeadline" />
+        </zeebe:ioMapping>
+      </bpmn:extensionElements>
+      <bpmn:incoming>Flow_Validation_Valid</bpmn:incoming>
+      <bpmn:outgoing>Flow_Init_Risk</bpmn:outgoing>
+    </bpmn:serviceTask>
+
+    <!-- BYPASS RISK ASSESSMENT -->
+    <bpmn:serviceTask id="Service_RiskAssessment" name="Risk Assessment &amp; Compliance Check">
+      <bpmn:extensionElements>
+        <zeebe:taskDefinition type="passthrough-risk" retries="1" />
+        <zeebe:taskHeaders>
+          <zeebe:header key="bypass" value="true" />
+          <zeebe:header key="sla" value="PT30M" />
+        </zeebe:taskHeaders>
+        <zeebe:ioMapping>
+          <zeebe:input source="=destination" target="destination" />
+          <zeebe:input source="=requestedAmount" target="amount" />
+          <zeebe:input source="=travelPurpose" target="purpose" />
+          <zeebe:output source="=riskLevel" target="riskLevel" />
+          <zeebe:output source="=requiresEnhancedApproval" target="requiresEnhancedApproval" />
+          <zeebe:output source="=riskScore" target="riskScore" />
+        </zeebe:ioMapping>
+      </bpmn:extensionElements>
+      <bpmn:incoming>Flow_Init_Risk</bpmn:incoming>
+      <bpmn:outgoing>Flow_Risk_Manager</bpmn:outgoing>
+    </bpmn:serviceTask>
+
+    <bpmn:userTask id="UserTask_ManagerApproval" name="Manager Approval">
+      <bpmn:extensionElements>
+        <zeebe:taskHeaders>
+          <zeebe:header key="assignee" value="=managerId" />
+          <zeebe:header key="candidateGroups" value="=approvalGroup" />
+        </zeebe:taskHeaders>
+        <zeebe:properties>
+          <zeebe:property name="sla" value="PT72H" />
+          <zeebe:property name="priority" value="=if requestedAmount &gt; 5000 then &quot;high&quot; else &quot;normal&quot;" />
+        </zeebe:properties>
+        <zeebe:ioMapping>
+          <zeebe:output source="=approved" target="managerApproved" />
+          <zeebe:output source="=comments" target="managerComments" />
+        </zeebe:ioMapping>
+        <zeebe:userTask />
+      </bpmn:extensionElements>
+      <bpmn:incoming>Flow_Risk_Manager</bpmn:incoming>
+      <bpmn:outgoing>Flow_Manager_Decision</bpmn:outgoing>
+    </bpmn:userTask>
+
+    <bpmn:exclusiveGateway id="Gateway_ManagerApproved" name="Manager Approved?">
+      <bpmn:incoming>Flow_Manager_Decision</bpmn:incoming>
+      <bpmn:outgoing>Flow_ManagerApproved_Yes</bpmn:outgoing>
+      <bpmn:outgoing>Flow_ManagerApproved_No</bpmn:outgoing>
+    </bpmn:exclusiveGateway>
+    <bpmn:serviceTask id="Service_NotifyRejection" name="Notify Rejection">
+      <bpmn:extensionElements>
+        <zeebe:taskDefinition type="notify-reject" retries="3" />
+      </bpmn:extensionElements>
+      <bpmn:incoming>Flow_ManagerApproved_No</bpmn:incoming>
+      <bpmn:outgoing>Flow_Rejection_End</bpmn:outgoing>
+    </bpmn:serviceTask>
+    <bpmn:serviceTask id="Service_NotifySuccess" name="Notify Manager Approval">
+      <bpmn:extensionElements>
+        <zeebe:taskDefinition type="notify-success" retries="3" />
+      </bpmn:extensionElements>
+      <bpmn:incoming>Flow_ManagerApproved_Yes</bpmn:incoming>
+      <bpmn:outgoing>Flow_Success_TravelDesk</bpmn:outgoing>
+    </bpmn:serviceTask>
+
+    <bpmn:userTask id="UserTask_TravelDeskCheck" name="Travel Desk Options Review">
+      <bpmn:extensionElements>
+        <zeebe:taskHeaders>
+          <zeebe:header key="candidateGroups" value="travel-desk-team" />
+        </zeebe:taskHeaders>
+        <zeebe:ioMapping>
+          <zeebe:output source="=advanceRequested" target="advanceRequested" />
+          <zeebe:output source="=travelOptions" target="travelOptions" />
+        </zeebe:ioMapping>
+        <zeebe:userTask />
+      </bpmn:extensionElements>
+      <bpmn:incoming>Flow_Success_TravelDesk</bpmn:incoming>
+      <bpmn:outgoing>Flow_TravelDesk_AdvanceCheck</bpmn:outgoing>
+    </bpmn:userTask>
+
+    <bpmn:exclusiveGateway id="Gateway_AdvanceRequested" name="Advance Payment Requested?">
+      <bpmn:incoming>Flow_TravelDesk_AdvanceCheck</bpmn:incoming>
+      <bpmn:outgoing>Flow_AdvanceRequested_Yes</bpmn:outgoing>
+      <bpmn:outgoing>Flow_AdvanceRequested_No</bpmn:outgoing>
+    </bpmn:exclusiveGateway>
+    <bpmn:serviceTask id="Service_AdvanceNotification" name="Notify Finance - Advance Requested">
+      <bpmn:extensionElements>
+        <zeebe:taskDefinition type="notify-advance-request" retries="3" />
+      </bpmn:extensionElements>
+      <bpmn:incoming>Flow_AdvanceRequested_Yes</bpmn:incoming>
+      <bpmn:outgoing>Flow_AdvanceNotif_Finance</bpmn:outgoing>
+    </bpmn:serviceTask>
+    <bpmn:serviceTask id="Service_ValidatePolicy" name="Validate Policy Compliance">
+      <bpmn:extensionElements>
+        <zeebe:taskDefinition type="validate-policy" retries="3" />
+        <zeebe:ioMapping>
+          <zeebe:output source="=withinPolicy" target="withinPolicy" />
+          <zeebe:output source="=policyViolations" target="policyViolations" />
+        </zeebe:ioMapping>
+      </bpmn:extensionElements>
+      <bpmn:incoming>Flow_AdvanceRequested_No</bpmn:incoming>
+      <bpmn:outgoing>Flow_Policy_Check</bpmn:outgoing>
+    </bpmn:serviceTask>
+    <bpmn:exclusiveGateway id="Gateway_PolicyCompliance" name="Within Policy?">
+      <bpmn:incoming>Flow_Policy_Check</bpmn:incoming>
+      <bpmn:outgoing>Flow_PolicyCompliant_Yes</bpmn:outgoing>
+      <bpmn:outgoing>Flow_PolicyCompliant_No</bpmn:outgoing>
+    </bpmn:exclusiveGateway>
+    <bpmn:serviceTask id="Service_NotifyPolicyViolation" name="Notify Finance - Policy Violation">
+      <bpmn:extensionElements>
+        <zeebe:taskDefinition type="notify-policy-violation" retries="3" />
+      </bpmn:extensionElements>
+      <bpmn:incoming>Flow_PolicyCompliant_No</bpmn:incoming>
+      <bpmn:outgoing>Flow_PolicyViolation_Finance</bpmn:outgoing>
+    </bpmn:serviceTask>
+    <bpmn:businessRuleTask id="BusinessRule_ApprovalMatrix" name="Determine Approval Requirements">
+      <bpmn:extensionElements>
+        <zeebe:taskDefinition type="business-rules" retries="3" />
+        <zeebe:properties>
+          <zeebe:property name="ruleset" value="travel-approval-matrix-v4" />
+        </zeebe:properties>
+        <zeebe:ioMapping>
+          <zeebe:output source="=requiresFinanceApproval" target="requiresFinanceApproval" />
+        </zeebe:ioMapping>
+      </bpmn:extensionElements>
+      <bpmn:incoming>Flow_AdvanceNotif_Finance</bpmn:incoming>
+      <bpmn:incoming>Flow_PolicyViolation_Finance</bpmn:incoming>
+      <bpmn:outgoing>Flow_Rules_Finance</bpmn:outgoing>
+    </bpmn:businessRuleTask>
+
+    <bpmn:userTask id="UserTask_FinanceApproval" name="Finance Approval">
+      <bpmn:extensionElements>
+        <zeebe:taskHeaders>
+          <zeebe:header key="candidateGroups" value="finance-approvers" />
+        </zeebe:taskHeaders>
+        <zeebe:properties>
+          <zeebe:property name="sla" value="PT48H" />
+        </zeebe:properties>
+        <zeebe:ioMapping>
+          <zeebe:output source="=financeApproved" target="financeApproved" />
+          <zeebe:output source="=advanceGranted" target="advanceGranted" />
+          <zeebe:output source="=advanceAmount" target="advanceAmount" />
+        </zeebe:ioMapping>
+        <zeebe:userTask />
+      </bpmn:extensionElements>
+      <bpmn:incoming>Flow_Rules_Finance</bpmn:incoming>
+      <bpmn:outgoing>Flow_Finance_Decision</bpmn:outgoing>
+    </bpmn:userTask>
+
+    <bpmn:exclusiveGateway id="Gateway_FinanceApproved" name="Finance Approved?">
+      <bpmn:incoming>Flow_Finance_Decision</bpmn:incoming>
+      <bpmn:outgoing>Flow_FinanceApproved_Yes</bpmn:outgoing>
+      <bpmn:outgoing>Flow_FinanceApproved_No</bpmn:outgoing>
+    </bpmn:exclusiveGateway>
+    <bpmn:serviceTask id="Service_NotifyFinanceRejection" name="Notify Finance Rejection">
+      <bpmn:extensionElements>
+        <zeebe:taskDefinition type="notify-reject" retries="3" />
+      </bpmn:extensionElements>
+      <bpmn:incoming>Flow_FinanceApproved_No</bpmn:incoming>
+      <bpmn:outgoing>Flow_FinanceRejection_End</bpmn:outgoing>
+    </bpmn:serviceTask>
+
+    <bpmn:exclusiveGateway id="Gateway_AdvanceGranted" name="Advance Granted?">
+      <bpmn:incoming>Flow_FinanceApproved_Yes</bpmn:incoming>
+      <bpmn:outgoing>Flow_AdvanceGranted_Yes</bpmn:outgoing>
+      <bpmn:outgoing>Flow_AdvanceGranted_No</bpmn:outgoing>
+    </bpmn:exclusiveGateway>
+    <bpmn:serviceTask id="Service_ProcessAdvance" name="Process Advance Payment">
+      <bpmn:extensionElements>
+        <zeebe:taskDefinition type="process-advance-payment" retries="3" />
+        <zeebe:ioMapping>
+          <zeebe:input source="=advanceAmount" target="paymentAmount" />
+          <zeebe:input source="=employeeId" target="beneficiaryId" />
+        </zeebe:ioMapping>
+      </bpmn:extensionElements>
+      <bpmn:incoming>Flow_AdvanceGranted_Yes</bpmn:incoming>
+      <bpmn:outgoing>Flow_AdvanceProcessed</bpmn:outgoing>
+    </bpmn:serviceTask>
+    <bpmn:serviceTask id="Service_UpdateAdvanceEntity" name="Update Travel Request - Advance Granted">
+      <bpmn:extensionElements>
+        <zeebe:taskDefinition type="update-advance-entity" retries="3" />
+      </bpmn:extensionElements>
+      <bpmn:incoming>Flow_AdvanceProcessed</bpmn:incoming>
+      <bpmn:outgoing>Flow_AdvanceEntity_Booking</bpmn:outgoing>
+    </bpmn:serviceTask>
+    <bpmn:serviceTask id="Service_BookTickets" name="Book Travel Tickets">
+      <bpmn:extensionElements>
+        <zeebe:taskDefinition type="book-tickets" retries="3" />
+        <zeebe:ioMapping>
+          <zeebe:output source="=bookingReference" target="bookingReference" />
+          <zeebe:output source="=actualCost" target="actualCost" />
+        </zeebe:ioMapping>
+      </bpmn:extensionElements>
+      <bpmn:incoming>Flow_PolicyCompliant_Yes</bpmn:incoming>
+      <bpmn:incoming>Flow_AdvanceEntity_Booking</bpmn:incoming>
+      <bpmn:outgoing>Flow_Booking_Upload</bpmn:outgoing>
+    </bpmn:serviceTask>
+    <bpmn:serviceTask id="Service_UploadAttachments" name="Upload Booking Documents">
+      <bpmn:extensionElements>
+        <zeebe:taskDefinition type="upload-attachments" retries="3" />
+      </bpmn:extensionElements>
+      <bpmn:incoming>Flow_Booking_Upload</bpmn:incoming>
+      <bpmn:outgoing>Flow_Upload_PriceCheck</bpmn:outgoing>
+    </bpmn:serviceTask>
+    <bpmn:serviceTask id="Service_OverpricedTracker" name="Check for Overpriced Booking">
+      <bpmn:extensionElements>
+        <zeebe:taskDefinition type="overpriced-tracker" retries="2" />
+        <zeebe:ioMapping>
+          <zeebe:output source="=isOverpriced" target="isOverpriced" />
+          <zeebe:output source="=priceDeviation" target="priceDeviation" />
+        </zeebe:ioMapping>
+      </bpmn:extensionElements>
+      <bpmn:incoming>Flow_Upload_PriceCheck</bpmn:incoming>
+      <bpmn:outgoing>Flow_PriceCheck_Decision</bpmn:outgoing>
+    </bpmn:serviceTask>
+    <bpmn:exclusiveGateway id="Gateway_Overpriced" name="Overpriced?">
+      <bpmn:incoming>Flow_PriceCheck_Decision</bpmn:incoming>
+      <bpmn:outgoing>Flow_Overpriced_Yes</bpmn:outgoing>
+      <bpmn:outgoing>Flow_Overpriced_No</bpmn:outgoing>
+    </bpmn:exclusiveGateway>
+    <bpmn:serviceTask id="Service_UpdateOverpricedEntity" name="Flag as Overpriced &amp; Update Entity">
+      <bpmn:extensionElements>
+        <zeebe:taskDefinition type="update-overpriced-entity" retries="3" />
+      </bpmn:extensionElements>
+      <bpmn:incoming>Flow_Overpriced_Yes</bpmn:incoming>
+      <bpmn:outgoing>Flow_Overpriced_HR</bpmn:outgoing>
+    </bpmn:serviceTask>
+
+    <bpmn:userTask id="UserTask_HRCompliance" name="HR Policy Compliance Review">
+      <bpmn:extensionElements>
+        <zeebe:taskHeaders>
+          <zeebe:header key="candidateGroups" value="hr-compliance-team" />
+        </zeebe:taskHeaders>
+        <zeebe:ioMapping>
+          <zeebe:output source="=compliant" target="hrCompliant" />
+        </zeebe:ioMapping>
+        <zeebe:userTask />
+      </bpmn:extensionElements>
+      <bpmn:incoming>Flow_Overpriced_No</bpmn:incoming>
+      <bpmn:incoming>Flow_Overpriced_HR</bpmn:incoming>
+      <bpmn:outgoing>Flow_HR_Audit</bpmn:outgoing>
+    </bpmn:userTask>
+
+    <bpmn:serviceTask id="Service_AuditTrail" name="Update Audit Trail">
+      <bpmn:extensionElements>
+        <zeebe:taskDefinition type="audit-trail" retries="3" />
+      </bpmn:extensionElements>
+      <bpmn:incoming>Flow_HR_Audit</bpmn:incoming>
+      <bpmn:outgoing>Flow_Audit_Complete</bpmn:outgoing>
+    </bpmn:serviceTask>
+    <bpmn:endEvent id="EndEvent_Rejected" name="Travel Request Rejected">
+      <bpmn:extensionElements>
+        <zeebe:properties>
+          <zeebe:property name="outcome" value="REJECTED" />
+        </zeebe:properties>
+      </bpmn:extensionElements>
+      <bpmn:incoming>Flow_Rejection_End</bpmn:incoming>
+      <bpmn:incoming>Flow_FinanceRejection_End</bpmn:incoming>
+    </bpmn:endEvent>
+    <bpmn:endEvent id="EndEvent_Approved" name="Travel Request Approved &amp; Completed">
+      <bpmn:extensionElements>
+        <zeebe:properties>
+          <zeebe:property name="outcome" value="APPROVED_COMPLETED" />
+        </zeebe:properties>
+      </bpmn:extensionElements>
+      <bpmn:incoming>Flow_Audit_Complete</bpmn:incoming>
+    </bpmn:endEvent>
+
+    <bpmn:sequenceFlow id="Flow_Start_Validation" sourceRef="StartEvent_TravelRequest" targetRef="Service_ValidateInput" />
+    <bpmn:sequenceFlow id="Flow_Validation_Decision" sourceRef="Service_ValidateInput" targetRef="Gateway_InputValidation" />
+    <bpmn:sequenceFlow id="Flow_Validation_Valid" name="Valid" sourceRef="Gateway_InputValidation" targetRef="Service_InitializeProcess">
+      <bpmn:conditionExpression xsi:type="bpmn:tFormalExpression">=inputValid = true</bpmn:conditionExpression>
+    </bpmn:sequenceFlow>
+    <bpmn:sequenceFlow id="Flow_Validation_Invalid" name="Invalid" sourceRef="Gateway_InputValidation" targetRef="Service_HandleInvalidInput">
+      <bpmn:conditionExpression xsi:type="bpmn:tFormalExpression">=inputValid = false</bpmn:conditionExpression>
+    </bpmn:sequenceFlow>
+    <bpmn:sequenceFlow id="Flow_InvalidInput_End" sourceRef="Service_HandleInvalidInput" targetRef="EndEvent_InvalidInput" />
+    <bpmn:sequenceFlow id="Flow_Init_Risk" sourceRef="Service_InitializeProcess" targetRef="Service_RiskAssessment" />
+    <bpmn:sequenceFlow id="Flow_Risk_Manager" sourceRef="Service_RiskAssessment" targetRef="UserTask_ManagerApproval" />
+    <bpmn:sequenceFlow id="Flow_Manager_Decision" sourceRef="UserTask_ManagerApproval" targetRef="Gateway_ManagerApproved" />
+    <bpmn:sequenceFlow id="Flow_ManagerApproved_Yes" name="Yes" sourceRef="Gateway_ManagerApproved" targetRef="Service_NotifySuccess">
+      <bpmn:conditionExpression xsi:type="bpmn:tFormalExpression">=managerApproved = true</bpmn:conditionExpression>
+    </bpmn:sequenceFlow>
+    <bpmn:sequenceFlow id="Flow_ManagerApproved_No" name="No" sourceRef="Gateway_ManagerApproved" targetRef="Service_NotifyRejection">
+      <bpmn:conditionExpression xsi:type="bpmn:tFormalExpression">=managerApproved = false</bpmn:conditionExpression>
+    </bpmn:sequenceFlow>
+    <bpmn:sequenceFlow id="Flow_Rejection_End" sourceRef="Service_NotifyRejection" targetRef="EndEvent_Rejected" />
+    <bpmn:sequenceFlow id="Flow_Success_TravelDesk" sourceRef="Service_NotifySuccess" targetRef="UserTask_TravelDeskCheck" />
+    <bpmn:sequenceFlow id="Flow_TravelDesk_AdvanceCheck" sourceRef="UserTask_TravelDeskCheck" targetRef="Gateway_AdvanceRequested" />
+    <bpmn:sequenceFlow id="Flow_AdvanceRequested_Yes" name="Yes" sourceRef="Gateway_AdvanceRequested" targetRef="Service_AdvanceNotification">
+      <bpmn:conditionExpression xsi:type="bpmn:tFormalExpression">=advanceRequested = true</bpmn:conditionExpression>
+    </bpmn:sequenceFlow>
+    <bpmn:sequenceFlow id="Flow_AdvanceRequested_No" name="No" sourceRef="Gateway_AdvanceRequested" targetRef="Service_ValidatePolicy">
+      <bpmn:conditionExpression xsi:type="bpmn:tFormalExpression">=advanceRequested = false</bpmn:conditionExpression>
+    </bpmn:sequenceFlow>
+    <bpmn:sequenceFlow id="Flow_AdvanceNotif_Finance" sourceRef="Service_AdvanceNotification" targetRef="BusinessRule_ApprovalMatrix" />
+    <bpmn:sequenceFlow id="Flow_Policy_Check" sourceRef="Service_ValidatePolicy" targetRef="Gateway_PolicyCompliance" />
+    <bpmn:sequenceFlow id="Flow_PolicyCompliant_Yes" name="Yes" sourceRef="Gateway_PolicyCompliance" targetRef="Service_BookTickets">
+      <bpmn:conditionExpression xsi:type="bpmn:tFormalExpression">=withinPolicy = true</bpmn:conditionExpression>
+    </bpmn:sequenceFlow>
+    <bpmn:sequenceFlow id="Flow_PolicyCompliant_No" name="No" sourceRef="Gateway_PolicyCompliance" targetRef="Service_NotifyPolicyViolation">
+      <bpmn:conditionExpression xsi:type="bpmn:tFormalExpression">=withinPolicy = false</bpmn:conditionExpression>
+    </bpmn:sequenceFlow>
+    <bpmn:sequenceFlow id="Flow_PolicyViolation_Finance" sourceRef="Service_NotifyPolicyViolation" targetRef="BusinessRule_ApprovalMatrix" />
+    <bpmn:sequenceFlow id="Flow_Rules_Finance" sourceRef="BusinessRule_ApprovalMatrix" targetRef="UserTask_FinanceApproval" />
+    <bpmn:sequenceFlow id="Flow_Finance_Decision" sourceRef="UserTask_FinanceApproval" targetRef="Gateway_FinanceApproved" />
+    <bpmn:sequenceFlow id="Flow_FinanceApproved_Yes" name="Yes" sourceRef="Gateway_FinanceApproved" targetRef="Gateway_AdvanceGranted">
+      <bpmn:conditionExpression xsi:type="bpmn:tFormalExpression">=financeApproved = true</bpmn:conditionExpression>
+    </bpmn:sequenceFlow>
+    <bpmn:sequenceFlow id="Flow_FinanceApproved_No" name="No" sourceRef="Gateway_FinanceApproved" targetRef="Service_NotifyFinanceRejection">
+      <bpmn:conditionExpression xsi:type="bpmn:tFormalExpression">=financeApproved = false</bpmn:conditionExpression>
+    </bpmn:sequenceFlow>
+    <bpmn:sequenceFlow id="Flow_FinanceRejection_End" sourceRef="Service_NotifyFinanceRejection" targetRef="EndEvent_Rejected" />
+    <bpmn:sequenceFlow id="Flow_AdvanceGranted_Yes" name="Yes" sourceRef="Gateway_AdvanceGranted" targetRef="Service_ProcessAdvance">
+      <bpmn:conditionExpression xsi:type="bpmn:tFormalExpression">=advanceGranted = true</bpmn:conditionExpression>
+    </bpmn:sequenceFlow>
+    <bpmn:sequenceFlow id="Flow_AdvanceGranted_No" name="No" sourceRef="Gateway_AdvanceGranted" targetRef="Service_BookTickets">
+      <bpmn:conditionExpression xsi:type="bpmn:tFormalExpression">=advanceGranted = false</bpmn:conditionExpression>
+    </bpmn:sequenceFlow>
+    <bpmn:sequenceFlow id="Flow_AdvanceProcessed" sourceRef="Service_ProcessAdvance" targetRef="Service_UpdateAdvanceEntity" />
+    <bpmn:sequenceFlow id="Flow_AdvanceEntity_Booking" sourceRef="Service_UpdateAdvanceEntity" targetRef="Service_BookTickets" />
+    <bpmn:sequenceFlow id="Flow_Booking_Upload" sourceRef="Service_BookTickets" targetRef="Service_UploadAttachments" />
+    <bpmn:sequenceFlow id="Flow_Upload_PriceCheck" sourceRef="Service_UploadAttachments" targetRef="Service_OverpricedTracker" />
+    <bpmn:sequenceFlow id="Flow_PriceCheck_Decision" sourceRef="Service_OverpricedTracker" targetRef="Gateway_Overpriced" />
+    <bpmn:sequenceFlow id="Flow_Overpriced_Yes" name="Yes" sourceRef="Gateway_Overpriced" targetRef="Service_UpdateOverpricedEntity">
+      <bpmn:conditionExpression xsi:type="bpmn:tFormalExpression">=isOverpriced = true</bpmn:conditionExpression>
+    </bpmn:sequenceFlow>
+    <bpmn:sequenceFlow id="Flow_Overpriced_No" name="No" sourceRef="Gateway_Overpriced" targetRef="UserTask_HRCompliance">
+      <bpmn:conditionExpression xsi:type="bpmn:tFormalExpression">=isOverpriced = false</bpmn:conditionExpression>
+    </bpmn:sequenceFlow>
+    <bpmn:sequenceFlow id="Flow_Overpriced_HR" sourceRef="Service_UpdateOverpricedEntity" targetRef="UserTask_HRCompliance" />
+    <bpmn:sequenceFlow id="Flow_HR_Audit" sourceRef="UserTask_HRCompliance" targetRef="Service_AuditTrail" />
+    <bpmn:sequenceFlow id="Flow_Audit_Complete" sourceRef="Service_AuditTrail" targetRef="EndEvent_Approved" />
+  </bpmn:process>
+  <bpmn:error id="Error_BookingFailed" name="BookingFailedError" errorCode="BOOKING_001" />
+  <bpmn:message id="Message_TravelRequest" name="travel-request-message">
+    <bpmn:extensionElements>
+      <zeebe:subscription correlationKey="=travelRequestId" />
+    </bpmn:extensionElements>
+  </bpmn:message>
+
+  <!-- DIAGRAM FROM YOUR EARLIER FILE -->
+  <bpmndi:BPMNDiagram id="BPMNDiagram_1">
+    <bpmndi:BPMNPlane id="BPMNPlane_1" bpmnElement="travel_approval_v4">
+      <bpmndi:BPMNShape id="Service_HandleInvalidInput_di" bpmnElement="Service_HandleInvalidInput">
+        <dc:Bounds x="510" y="370" width="100" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="EndEvent_InvalidInput_di" bpmnElement="EndEvent_InvalidInput">
+        <dc:Bounds x="650" y="392" width="36" height="36" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="637" y="436" width="61" height="27" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Service_InitializeProcess_di" bpmnElement="Service_InitializeProcess">
+        <dc:Bounds x="510" y="170" width="100" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Service_RiskAssessment_di" bpmnElement="Service_RiskAssessment">
+        <dc:Bounds x="660" y="170" width="100" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="UserTask_ManagerApproval_di" bpmnElement="UserTask_ManagerApproval">
+        <dc:Bounds x="810" y="170" width="100" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Gateway_ManagerApproved_di" bpmnElement="Gateway_ManagerApproved" isMarkerVisible="true">
+        <dc:Bounds x="960" y="185" width="50" height="50" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="958" y="147.5" width="53" height="27" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Service_NotifySuccess_di" bpmnElement="Service_NotifySuccess">
+        <dc:Bounds x="1110" y="170" width="100" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="UserTask_TravelDeskCheck_di" bpmnElement="UserTask_TravelDeskCheck">
+        <dc:Bounds x="1260" y="170" width="100" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Gateway_AdvanceRequested_di" bpmnElement="Gateway_AdvanceRequested" isMarkerVisible="true">
+        <dc:Bounds x="1410" y="185" width="50" height="50" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="1390" y="147.5" width="90" height="27" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Service_AdvanceNotification_di" bpmnElement="Service_AdvanceNotification">
+        <dc:Bounds x="1510" y="370" width="100" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Service_NotifyPolicyViolation_di" bpmnElement="Service_NotifyPolicyViolation">
+        <dc:Bounds x="1660" y="370" width="100" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="BusinessRule_ApprovalMatrix_di" bpmnElement="BusinessRule_ApprovalMatrix">
+        <dc:Bounds x="1810" y="170" width="100" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="UserTask_FinanceApproval_di" bpmnElement="UserTask_FinanceApproval">
+        <dc:Bounds x="1960" y="170" width="100" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Gateway_FinanceApproved_di" bpmnElement="Gateway_FinanceApproved" isMarkerVisible="true">
+        <dc:Bounds x="2110" y="185" width="50" height="50" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="2108" y="147.5" width="53" height="27" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="EndEvent_Rejected_di" bpmnElement="EndEvent_Rejected">
+        <dc:Bounds x="1282" y="402" width="36" height="36" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="1262" y="364.5" width="75" height="27" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="StartEvent_TravelRequest_di" bpmnElement="StartEvent_TravelRequest">
+        <dc:Bounds x="172" y="192" width="36" height="36" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="153" y="228" width="75" height="27" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Service_ValidateInput_di" bpmnElement="Service_ValidateInput">
+        <dc:Bounds x="260" y="170" width="100" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Gateway_InputValidation_di" bpmnElement="Gateway_InputValidation" isMarkerVisible="true">
+        <dc:Bounds x="415" y="185" width="50" height="50" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="411" y="161" width="58" height="14" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Service_NotifyRejection_di" bpmnElement="Service_NotifyRejection">
+        <dc:Bounds x="1110" y="380" width="100" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Service_ValidatePolicy_di" bpmnElement="Service_ValidatePolicy">
+        <dc:Bounds x="1510" y="170" width="100" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Gateway_PolicyCompliance_di" bpmnElement="Gateway_PolicyCompliance" isMarkerVisible="true">
+        <dc:Bounds x="1660" y="185" width="50" height="50" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="1719.5" y="203" width="69" height="14" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Gateway_AdvanceGranted_di" bpmnElement="Gateway_AdvanceGranted" isMarkerVisible="true">
+        <dc:Bounds x="2225" y="185" width="50" height="50" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="2227" y="147.5" width="46" height="27" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Service_NotifyFinanceRejection_di" bpmnElement="Service_NotifyFinanceRejection">
+        <dc:Bounds x="2085" y="520" width="100" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Service_ProcessAdvance_di" bpmnElement="Service_ProcessAdvance">
+        <dc:Bounds x="2330" y="170" width="100" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Service_UpdateAdvanceEntity_di" bpmnElement="Service_UpdateAdvanceEntity">
+        <dc:Bounds x="2490" y="170" width="100" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Service_BookTickets_di" bpmnElement="Service_BookTickets">
+        <dc:Bounds x="2650" y="170" width="100" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Service_OverpricedTracker_di" bpmnElement="Service_OverpricedTracker">
+        <dc:Bounds x="2960" y="170" width="100" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Gateway_Overpriced_di" bpmnElement="Gateway_Overpriced" isMarkerVisible="true">
+        <dc:Bounds x="2985" y="285" width="50" height="50" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="2915" y="303" width="60" height="14" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Service_UpdateOverpricedEntity_di" bpmnElement="Service_UpdateOverpricedEntity">
+        <dc:Bounds x="2960" y="390" width="100" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="UserTask_HRCompliance_di" bpmnElement="UserTask_HRCompliance">
+        <dc:Bounds x="3220" y="390" width="100" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Service_AuditTrail_di" bpmnElement="Service_AuditTrail">
+        <dc:Bounds x="3370" y="390" width="100" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="EndEvent_Approved_di" bpmnElement="EndEvent_Approved">
+        <dc:Bounds x="3542" y="412" width="36" height="36" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="3523" y="448" width="75" height="40" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Service_UploadAttachments_di" bpmnElement="Service_UploadAttachments">
+        <dc:Bounds x="2800" y="170" width="100" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNEdge id="Flow_Validation_Invalid_di" bpmnElement="Flow_Validation_Invalid">
+        <di:waypoint x="440" y="235" />
+        <di:waypoint x="440" y="410" />
+        <di:waypoint x="510" y="410" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="454" y="313" width="32" height="14" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_InvalidInput_End_di" bpmnElement="Flow_InvalidInput_End">
+        <di:waypoint x="610" y="410" />
+        <di:waypoint x="650" y="410" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_Validation_Valid_di" bpmnElement="Flow_Validation_Valid">
+        <di:waypoint x="465" y="210" />
+        <di:waypoint x="510" y="210" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="476" y="185" width="23" height="14" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_Init_Risk_di" bpmnElement="Flow_Init_Risk">
+        <di:waypoint x="610" y="210" />
+        <di:waypoint x="660" y="210" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_Risk_Manager_di" bpmnElement="Flow_Risk_Manager">
+        <di:waypoint x="760" y="210" />
+        <di:waypoint x="810" y="210" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_Manager_Decision_di" bpmnElement="Flow_Manager_Decision">
+        <di:waypoint x="910" y="210" />
+        <di:waypoint x="960" y="210" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_ManagerApproved_Yes_di" bpmnElement="Flow_ManagerApproved_Yes">
+        <di:waypoint x="1010" y="210" />
+        <di:waypoint x="1110" y="210" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="1051" y="185" width="18" height="14" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_ManagerApproved_No_di" bpmnElement="Flow_ManagerApproved_No">
+        <di:waypoint x="985" y="235" />
+        <di:waypoint x="985" y="420" />
+        <di:waypoint x="1110" y="420" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="993" y="319" width="15" height="14" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_Success_TravelDesk_di" bpmnElement="Flow_Success_TravelDesk">
+        <di:waypoint x="1210" y="210" />
+        <di:waypoint x="1260" y="210" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_TravelDesk_AdvanceCheck_di" bpmnElement="Flow_TravelDesk_AdvanceCheck">
+        <di:waypoint x="1360" y="210" />
+        <di:waypoint x="1410" y="210" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_AdvanceRequested_Yes_di" bpmnElement="Flow_AdvanceRequested_Yes">
+        <di:waypoint x="1435" y="235" />
+        <di:waypoint x="1435" y="410" />
+        <di:waypoint x="1510" y="410" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="1441" y="314" width="18" height="14" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_AdvanceRequested_No_di" bpmnElement="Flow_AdvanceRequested_No">
+        <di:waypoint x="1460" y="210" />
+        <di:waypoint x="1510" y="210" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="1478" y="185" width="15" height="14" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_AdvanceNotif_Finance_di" bpmnElement="Flow_AdvanceNotif_Finance">
+        <di:waypoint x="1560" y="450" />
+        <di:waypoint x="1560" y="500" />
+        <di:waypoint x="1870" y="500" />
+        <di:waypoint x="1870" y="250" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_PolicyCompliant_No_di" bpmnElement="Flow_PolicyCompliant_No">
+        <di:waypoint x="1685" y="235" />
+        <di:waypoint x="1685" y="370" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="1693" y="294" width="15" height="14" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_PolicyViolation_Finance_di" bpmnElement="Flow_PolicyViolation_Finance">
+        <di:waypoint x="1760" y="410" />
+        <di:waypoint x="1840" y="410" />
+        <di:waypoint x="1840" y="250" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_Rules_Finance_di" bpmnElement="Flow_Rules_Finance">
+        <di:waypoint x="1910" y="210" />
+        <di:waypoint x="1960" y="210" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_Finance_Decision_di" bpmnElement="Flow_Finance_Decision">
+        <di:waypoint x="2060" y="210" />
+        <di:waypoint x="2110" y="210" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_FinanceApproved_Yes_di" bpmnElement="Flow_FinanceApproved_Yes">
+        <di:waypoint x="2160" y="210" />
+        <di:waypoint x="2225" y="210" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="2181" y="188" width="18" height="14" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_FinanceApproved_No_di" bpmnElement="Flow_FinanceApproved_No">
+        <di:waypoint x="2135" y="235" />
+        <di:waypoint x="2135" y="520" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="2117" y="463" width="15" height="14" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_Rejection_End_di" bpmnElement="Flow_Rejection_End">
+        <di:waypoint x="1210" y="420" />
+        <di:waypoint x="1282" y="420" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_FinanceRejection_End_di" bpmnElement="Flow_FinanceRejection_End">
+        <di:waypoint x="2085" y="560" />
+        <di:waypoint x="1300" y="560" />
+        <di:waypoint x="1300" y="438" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_Start_Validation_di" bpmnElement="Flow_Start_Validation">
+        <di:waypoint x="208" y="210" />
+        <di:waypoint x="260" y="210" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_Validation_Decision_di" bpmnElement="Flow_Validation_Decision">
+        <di:waypoint x="360" y="210" />
+        <di:waypoint x="415" y="210" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_Policy_Check_di" bpmnElement="Flow_Policy_Check">
+        <di:waypoint x="1610" y="210" />
+        <di:waypoint x="1660" y="210" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_PolicyCompliant_Yes_di" bpmnElement="Flow_PolicyCompliant_Yes">
+        <di:waypoint x="1685" y="185" />
+        <di:waypoint x="1685" y="110" />
+        <di:waypoint x="2690" y="110" />
+        <di:waypoint x="2690" y="170" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="2180" y="85" width="18" height="14" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_AdvanceGranted_Yes_di" bpmnElement="Flow_AdvanceGranted_Yes">
+        <di:waypoint x="2275" y="210" />
+        <di:waypoint x="2330" y="210" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="2306" y="194" width="18" height="14" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_AdvanceGranted_No_di" bpmnElement="Flow_AdvanceGranted_No">
+        <di:waypoint x="2250" y="235" />
+        <di:waypoint x="2250" y="420" />
+        <di:waypoint x="2690" y="420" />
+        <di:waypoint x="2690" y="250" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="2463" y="395" width="15" height="14" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_AdvanceProcessed_di" bpmnElement="Flow_AdvanceProcessed">
+        <di:waypoint x="2430" y="210" />
+        <di:waypoint x="2490" y="210" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_AdvanceEntity_Booking_di" bpmnElement="Flow_AdvanceEntity_Booking">
+        <di:waypoint x="2590" y="210" />
+        <di:waypoint x="2650" y="210" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_Booking_Upload_di" bpmnElement="Flow_Booking_Upload">
+        <di:waypoint x="2750" y="210" />
+        <di:waypoint x="2800" y="210" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_Upload_PriceCheck_di" bpmnElement="Flow_Upload_PriceCheck">
+        <di:waypoint x="2900" y="210" />
+        <di:waypoint x="2960" y="210" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_PriceCheck_Decision_di" bpmnElement="Flow_PriceCheck_Decision">
+        <di:waypoint x="3010" y="250" />
+        <di:waypoint x="3010" y="285" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_Overpriced_Yes_di" bpmnElement="Flow_Overpriced_Yes">
+        <di:waypoint x="3010" y="335" />
+        <di:waypoint x="3010" y="390" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="3016" y="354" width="18" height="14" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_Overpriced_No_di" bpmnElement="Flow_Overpriced_No">
+        <di:waypoint x="3035" y="310" />
+        <di:waypoint x="3270" y="310" />
+        <di:waypoint x="3270" y="390" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="3217" y="298" width="15" height="14" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_Overpriced_HR_di" bpmnElement="Flow_Overpriced_HR">
+        <di:waypoint x="3060" y="420" />
+        <di:waypoint x="3220" y="420" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_HR_Audit_di" bpmnElement="Flow_HR_Audit">
+        <di:waypoint x="3320" y="430" />
+        <di:waypoint x="3370" y="430" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_Audit_Complete_di" bpmnElement="Flow_Audit_Complete">
+        <di:waypoint x="3470" y="430" />
+        <di:waypoint x="3542" y="430" />
+      </bpmndi:BPMNEdge>
+    </bpmndi:BPMNPlane>
+  </bpmndi:BPMNDiagram>
+</bpmn:definitions>

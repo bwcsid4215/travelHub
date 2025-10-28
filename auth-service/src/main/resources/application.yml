@@ -6,7 +6,7 @@ spring:
     name: auth-service
 
   datasource:
-    url: jdbc:postgresql://BWC-97.brainwaveconsulting.co.in:5432/AuthenticationDatabase
+    url: jdbc:postgresql://localhost:5432/AuthenticationDatabase
     username: TravelApplication123
     password: TravelApplication123
     driver-class-name: org.postgresql.Driver
@@ -46,7 +46,7 @@ server:
   servlet:
     context-path: /auth
   tomcat:
-    connection-timeout: 10s     # ✅ Fixed (moved from root)
+    connection-timeout: 10s
     max-threads: 150
     min-spare-threads: 20
     accept-count: 100
@@ -95,7 +95,6 @@ logging:
 management:
   server:
     port: 9111
-
   endpoints:
     web:
       exposure:
@@ -107,13 +106,11 @@ management:
       enabled: true
     env:
       enabled: true
-
   metrics:
     tags:
       application: ${spring.application.name}
-
   prometheus:
     metrics:
       export:
-        enabled: true      # ✅ replaced deprecated key
+        enabled: true
         step: 30s

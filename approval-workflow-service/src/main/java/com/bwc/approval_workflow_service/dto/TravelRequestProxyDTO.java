@@ -4,7 +4,10 @@ import java.time.LocalDate;
 import java.util.UUID;
 import lombok.*;
 
-@Data @NoArgsConstructor @AllArgsConstructor @Builder
+@Data
+@NoArgsConstructor
+@AllArgsConstructor
+@Builder
 public class TravelRequestProxyDTO {
     private UUID travelRequestId;
     private UUID employeeId;

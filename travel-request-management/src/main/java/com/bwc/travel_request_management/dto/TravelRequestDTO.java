@@ -2,12 +2,7 @@ package com.bwc.travel_request_management.dto;
 
 import com.fasterxml.jackson.annotation.JsonFormat;
 import com.fasterxml.jackson.annotation.JsonInclude;
-import jakarta.validation.constraints.AssertTrue;
-import jakarta.validation.constraints.Future;
-import jakarta.validation.constraints.FutureOrPresent;
-import jakarta.validation.constraints.NotBlank;
-import jakarta.validation.constraints.NotNull;
-import jakarta.validation.constraints.Size;
+import jakarta.validation.constraints.*;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -32,6 +27,8 @@ public class TravelRequestDTO {
     @NotNull(message = "Project ID is required")
     private UUID projectId;
 
+    private UUID managerId;
+
     @NotNull(message = "Start date is required")
     @FutureOrPresent(message = "Start date must be today or in the future")
     @JsonFormat(pattern = "yyyy-MM-dd")
@@ -45,6 +42,11 @@ public class TravelRequestDTO {
     @NotBlank(message = "Purpose is required")
     @Size(max = 1000, message = "Purpose cannot exceed 1000 characters")
     private String purpose;
+
+    private Double estimatedBudget;
+
+    private String travelDestination;
+    private String origin;
 
     @Builder.Default
     private boolean managerPresent = true;
@@ -60,6 +62,4 @@ public class TravelRequestDTO {
         }
         return endDate.isAfter(startDate);
     }
-    
-    private Double estimatedBudget;
 }

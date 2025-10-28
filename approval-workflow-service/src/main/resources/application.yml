@@ -1,209 +1,211 @@
-# =========================================================
-# 🌍 Application Info
-# =========================================================
+# =====================================================================
+# 🌐 Application Configuration
+# =====================================================================
 spring:
   application:
     name: approval-workflow-service
-#  profiles:
-#    active: dev
 
-  datasource:
-    url: jdbc:postgresql://BWC-97.brainwaveconsulting.co.in:5432/ApprovalWorkflowDatabase
-    username: TravelApplication123
-    password: TravelApplication123
-    driver-class-name: org.postgresql.Driver
-    hikari:
-      maximum-pool-size: 40
-      minimum-idle: 10
-      connection-timeout: 30000
-      idle-timeout: 300000
-      max-lifetime: 600000
+  main:
+    banner-mode: console
+    # keep default (don't enable bean overriding)
 
-  jpa:
-    hibernate:
-      ddl-auto: update
-    show-sql: false
-    open-in-view: false
-    properties:
-      hibernate:
-        format_sql: true
-        jdbc:
-          lob.non_contextual_creation: true
-          batch_size: 50
-          fetch_size: 100
-        order_inserts: true
-        order_updates: true
-        batch_versioned_data: true
-
-  cloud:
-    openfeign:
-      client:
-        config:
-          default:
-            connect-timeout: 3000
-            read-timeout: 7000
-            logger-level: basic
-
-  # =========================================================
-  # 🚀 Kafka Configuration
-  # =========================================================
   kafka:
-    bootstrap-servers: localhost:9092
+    bootstrap-servers: localhost:29092
+
     consumer:
       group-id: workflow-group
-      auto-offset-reset: earliest
+      # Don't replay the world on a fresh dev group
+      auto-offset-reset: latest
       key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
       value-deserializer: org.springframework.kafka.support.serializer.JsonDeserializer
+      # Best practice: manual acks only after successful processing
+      enable-auto-commit: false
       properties:
-        spring.deserializer.value.delegate.class: org.springframework.kafka.support.serializer.JsonDeserializer
-        spring.json.trusted.packages: "*"
         spring.json.use.type.headers: false
         spring.json.value.default.type: com.bwc.approval_workflow_service.dto.TravelRequestProxyDTO
+        spring.json.trusted.packages: "*"
+        # Good hygiene for transactional producers (if you add them later)
+        isolation.level: read_committed
+
+    listener:
+      # manual acknowledge after successful Zeebe start
+      ack-mode: MANUAL_IMMEDIATE
+      missing-topics-fatal: false
+      concurrency: 3
+
     producer:
       key-serializer: org.apache.kafka.common.serialization.StringSerializer
       value-serializer: org.springframework.kafka.support.serializer.JsonSerializer
       properties:
-        spring.json.add.type.headers: false   # ✅ Don’t add class headers
-    listener:
-      missing-topics-fatal: false
+        spring.json.add.type.headers: false
 
-# =========================================================
+# =====================================================================
 # ⚙️ Server Configuration
-# =========================================================
+# =====================================================================
 server:
-  address: 0.0.0.0
-  port: 9013
+  port: 8084
   servlet:
-    context-path: /workflow
-  tomcat:
-    connection-timeout: 10s
-    max-threads: 200
-    min-spare-threads: 20
-    accept-count: 200
-    max-connections: 5000
+    context-path: /
+  compression:
+    enabled: true
+    mime-types: text/html,text/xml,text/plain,text/css,text/javascript,application/javascript,application/json
+    min-response-size: 1024
 
-# =========================================================
-# ⚙️ Workflow Configuration
-# =========================================================
-workflow:
-  default-priority: NORMAL
-  steps:
-    manager-approval:
-      time-limit-hours: 48
-    hr-approval:
-      time-limit-hours: 72
-    travel-desk-approval:
-      time-limit-hours: 24
-    finance-approval:
-      time-limit-hours: 48
+# =====================================================================
+# ⚙️ Zeebe (Camunda) Client Configuration
+# =====================================================================
+zeebe:
+  client:
+    broker:
+      gateway-address: 127.0.0.1:26500
+    security:
+      plaintext: true
+    requestTimeout: PT60S
+    # ✅ Use ONLY the @Deployment annotation you already have.
+    # startup:
+    #   deployment:
+    #     resources: classpath:bpmn/travel_approval_v4.bpmn
 
-# =========================================================
-# 🌐 External Service URLs
-# =========================================================
-services:
-  employee:
-    url: http://localhost:9010/ems
-  policy:
-    url: http://localhost:9012/policy
-  travel-request:
-    url: http://localhost:9015/travel-management
-  notification:
-    url: http://localhost:9014/notification
+    worker:
+      threads: 4
+      maxJobsActive: 32
+      pollInterval: PT1S
+      timeout: PT30S
+      defaultName: approval-worker
 
-# =========================================================
-# 🧱 Resilience4j Circuit Breakers
-# =========================================================
-resilience4j:
-  circuitbreaker:
-    instances:
-      travel-request-service:
-        register-health-indicator: true
-        sliding-window-size: 10
-        minimum-number-of-calls: 5
-        permitted-number-of-calls-in-half-open-state: 3
-        automatic-transition-from-open-to-half-open-enabled: true
-        wait-duration-in-open-state: 10s
-        failure-rate-threshold: 50
-
-      notification-service:
-        register-health-indicator: true
-        sliding-window-size: 10
-        minimum-number-of-calls: 5
-        permitted-number-of-calls-in-half-open-state: 3
-        automatic-transition-from-open-to-half-open-enabled: true
-        wait-duration-in-open-state: 10s
-        failure-rate-threshold: 50
-
-  retry:
-    instances:
-      travel-request-service:
-        max-attempts: 3
-        wait-duration: 2s
-      notification-service:
-        max-attempts: 3
-        wait-duration: 2s
-
-# =========================================================
-# 🔐 Security / JWT Configuration
-# =========================================================
-jwt:
-  secret: MySuperSecureAesEncryptionKey123456
-  expiration-seconds: 3600
-
-# =========================================================
-# 🔑 Internal Gateway Secret
-# =========================================================
-gateway:
-  internal:
-    secret: bwc-secure-gateway
-
-# =========================================================
-# 🧾 Logging
-# =========================================================
-logging:
-  level:
-    root: INFO
-    com.bwc.approval_workflow_service: DEBUG
-    org.hibernate.SQL: off                  # 🚫 Disable SQL query logs
-    org.hibernate.type.descriptor.sql.BasicBinder: off   # 🚫 Disable parameter logs
-    org.springframework.web: INFO
-    org.springframework.cloud.openfeign: INFO
-    org.springframework.scheduling: INFO
-    org.springframework.cloud.circuitbreaker: INFO
-  pattern:
-    console: "%d{yyyy-MM-dd HH:mm:ss} [%thread] %-5level %logger{36} - %msg%n"
-
-# =========================================================
-# 📊 Actuator + Prometheus (Unified)
-# =========================================================
+# =====================================================================
+# 📊 Actuator & Prometheus
+# =====================================================================
 management:
-  server:
-    port: 9113
-
   endpoints:
     web:
       exposure:
-        include: health,info,metrics,env,circuitbreakers
+        include: health,info,metrics,prometheus,env,beans,configprops
+      base-path: /actuator
+    enabled-by-default: true
+
   endpoint:
     health:
       show-details: always
       show-components: always
+      probes:
+        enabled: true
     metrics:
       enabled: true
-    env:
+    prometheus:
       enabled: true
-    circuitbreakers:
-      enabled: true
-  info:
-    env:
-      enabled: true
-
-  metrics:
-    tags:
-      application: ${spring.application.name}
 
   prometheus:
     metrics:
       export:
         enabled: true
-        step: 30s
+
+  metrics:
+    distribution:
+      percentiles-histogram:
+        http.server.requests: true
+    tags:
+      application: ${spring.application.name}
+      environment: local
+    # 🚫 Avoid the Prometheus "same name, different tag keys" warning
+    enable:
+      executor: false
+
+  info:
+    env:
+      enabled: true
+    git:
+      mode: full
+
+# =====================================================================
+# 🔗 External Services
+# =====================================================================
+services:
+  employee:
+    url: http://localhost:8081
+    connect-timeout: 5000
+    read-timeout: 30000
+
+  tasklist:
+    url: http://localhost:8082
+    connect-timeout: 5000
+    read-timeout: 30000
+
+# =====================================================================
+# 🔌 Feign
+# =====================================================================
+feign:
+  client:
+    config:
+      default:
+        connectTimeout: 5000
+        readTimeout: 30000
+        loggerLevel: basic
+        retryer: com.bwc.approval_workflow_service.config.CustomRetryer
+        errorDecoder: com.bwc.approval_workflow_service.config.CustomErrorDecoder
+  circuitbreaker:
+    enabled: true
+  compression:
+    request:
+      enabled: true
+      mime-types: text/xml,application/xml,application/json
+      min-request-size: 2048
+    response:
+      enabled: true
+
+# =====================================================================
+# ⚡ Resilience4j
+# =====================================================================
+resilience4j:
+  circuitbreaker:
+    instances:
+      employeeService:
+        registerHealthIndicator: true
+        slidingWindowSize: 10
+        minimumNumberOfCalls: 5
+        waitDurationInOpenState: 10s
+        failureRateThreshold: 50
+        permittedNumberOfCallsInHalfOpenState: 3
+        automaticTransitionFromOpenToHalfOpenEnabled: true
+
+      workflowService:
+        registerHealthIndicator: true
+        slidingWindowSize: 20
+        minimumNumberOfCalls: 10
+        waitDurationInOpenState: 30s
+        failureRateThreshold: 30
+
+  retry:
+    instances:
+      employeeService:
+        maxAttempts: 3
+        waitDuration: 2s
+        enableExponentialBackoff: true
+        exponentialBackoffMultiplier: 2
+
+# =====================================================================
+# 📝 Logging
+# =====================================================================
+logging:
+  level:
+    root: INFO
+    io.camunda: INFO
+    com.bwc: DEBUG
+    org.springframework.kafka: INFO
+    org.apache.kafka.clients.consumer: INFO
+    org.apache.kafka.clients.producer: INFO
+    feign: DEBUG
+    org.hibernate: WARN
+
+  pattern:
+    console: "%d{yyyy-MM-dd HH:mm:ss.SSS} [%thread] %-5level %logger{36} - %msg%n"
+    file: "%d{yyyy-MM-dd HH:mm:ss.SSS} [%thread] %-5level %logger{36} - %msg%n"
+
+  file:
+    name: logs/approval-workflow-service.log
+
+  logback:
+    rollingpolicy:
+      max-file-size: 10MB
+      max-history: 30
+      total-size-cap: 1GB

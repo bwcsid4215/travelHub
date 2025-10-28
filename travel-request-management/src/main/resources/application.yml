@@ -15,7 +15,7 @@ spring:
     name: travel-request-management
 
   datasource:
-    url: jdbc:postgresql://BWC-97.brainwaveconsulting.co.in:5432/TravelRequestDatabase
+    url: jdbc:postgresql://localhost:5432/TravelRequestDatabase
     username: TravelApplication123
     password: TravelApplication123
     driver-class-name: org.postgresql.Driver
@@ -34,10 +34,8 @@ spring:
     show-sql: false
     properties:
       hibernate:
-        dialect: org.hibernate.dialect.PostgreSQLDialect
-        jdbc:
-          batch_size: 50
-          fetch_size: 100
+        jdbc.batch_size: 50
+        jdbc.fetch_size: 100
         order_inserts: true
         order_updates: true
 
@@ -54,6 +52,25 @@ spring:
             connect-timeout: 3000
             read-timeout: 7000
             logger-level: basic
+
+  # ✅ STANDARD SPRING KAFKA CONFIG
+  kafka:
+    bootstrap-servers: localhost:29092
+
+    producer:
+      key-serializer: org.apache.kafka.common.serialization.StringSerializer
+      value-serializer: org.springframework.kafka.support.serializer.JsonSerializer
+      properties:
+        spring.json.add.type.headers: false
+
+    consumer:
+      group-id: travel-request-group
+      auto-offset-reset: earliest
+      key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+      value-deserializer: org.springframework.kafka.support.serializer.JsonDeserializer
+      properties:
+        spring.json.trusted.packages: "*"
+        spring.json.use.type.headers: false
 
 # =========================================================
 # ⚙️ Server Configuration
@@ -117,28 +134,6 @@ resilience4j:
         wait-duration: 2s
 
 # =========================================================
-# 🚀 Kafka Configuration
-# =========================================================
-
-  kafka:
-    bootstrap-servers: localhost:9092
-
-    producer:
-      key-serializer: org.apache.kafka.common.serialization.StringSerializer
-      value-serializer: org.springframework.kafka.support.serializer.JsonSerializer
-      properties:
-        spring.json.add.type.headers: false   # 🚀 Don’t send class metadata in headers
-
-    consumer:
-      group-id: travel-request-group
-      auto-offset-reset: earliest
-      key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
-      value-deserializer: org.springframework.kafka.support.serializer.JsonDeserializer
-      properties:
-        spring.json.trusted.packages: "*"
-        spring.json.use.type.headers: false   # 🚀 Ignore any type headers if they appear
-
-# =========================================================
 # 🧾 Logging
 # =========================================================
 logging:
@@ -150,17 +145,20 @@ logging:
     org.springframework.cloud.openfeign: INFO
     org.springframework.scheduling: INFO
     org.springframework.cloud.circuitbreaker: INFO
+
   pattern:
     console: "%d{yyyy-MM-dd HH:mm:ss} [%thread] %-5level %logger{36} - %msg%n"
+
   file:
     name: logs/travel-request-management.log
+
   logback:
     rollingpolicy:
       max-file-size: 10MB
       max-history: 10
 
 # =========================================================
-# 📊 Actuator + Prometheus (Unified)
+# 📊 Actuator + Prometheus
 # =========================================================
 management:
   server:
@@ -180,26 +178,9 @@ management:
       enabled: true
     env:
       enabled: true
-    circuitbreakers:
-      enabled: true
-  info:
-    env:
-      enabled: true
-  health:
-    livenessstate:
-      enabled: true
-    readinessstate:
-      enabled: true
-    group:
-      readiness:
-        include: db,ping
-      liveness:
-        include: ping
-
   metrics:
     tags:
       application: ${spring.application.name}
-
   prometheus:
     metrics:
       export:

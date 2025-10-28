@@ -6,7 +6,7 @@ spring:
     name: employee-management-service
 
   datasource:
-    url: jdbc:postgresql://BWC-97.brainwaveconsulting.co.in:5432/EmployeeDatabase
+    url: jdbc:postgresql://localhost:5432/EmployeeDatabase
     username: TravelApplication123
     password: TravelApplication123
     driver-class-name: org.postgresql.Driver
