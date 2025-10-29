@@ -19,4 +19,6 @@ public class TravelRequestProxyDTO {
     private Double estimatedBudget;
     private String origin;
     private String travelDestination;
+    private boolean managerPresent;
+    
 }

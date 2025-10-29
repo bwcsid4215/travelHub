@@ -22,11 +22,10 @@ public class TravelRequestConsumer {
 
     private final ZeebeClient zeebeClient;
 
-    // Read groupId and other props from application.yml (don’t hard-code here)
     @KafkaListener(
-        topics = "travel-request-events",
-        groupId = "${spring.kafka.consumer.group-id}"
-        // ack-mode is MANUAL_IMMEDIATE via application.yml
+            topics = "travel-request-events",
+            groupId = "${spring.kafka.consumer.group-id}"
+            // ack-mode is MANUAL_IMMEDIATE via application.yml
     )
     public void consume(
             TravelRequestProxyDTO travel,
@@ -37,8 +36,7 @@ public class TravelRequestConsumer {
             @Header(name = KafkaHeaders.RECEIVED_KEY, required = false) String key
     ) {
         UUID travelId = travel.getTravelRequestId();
-        log.info("📥 Received travel request: {} | key={} p{}@{}",
-                travelId, key, partition, offset);
+        log.info("📥 Received travel request: {} | key={} p{}@{}", travelId, key, partition, offset);
 
         // --- Build Zeebe variables (camelCase aligned to BPMN v4) ---
         Map<String, Object> vars = new HashMap<>();
@@ -51,9 +49,9 @@ public class TravelRequestConsumer {
         vars.put("origin", travel.getOrigin() != null ? travel.getOrigin() : "Unknown");
         vars.put("destination", travel.getTravelDestination() != null ? travel.getTravelDestination() : "Unknown");
         vars.put("travelPurpose", travel.getPurpose() != null ? travel.getPurpose() : "NA");
+        vars.put("managerPresent", travel.isManagerPresent());
 
         try {
-            // Start the workflow (idempotency tip: consider using a business key later)
             zeebeClient
                     .newCreateInstanceCommand()
                     .bpmnProcessId("travel_approval_v4")
@@ -67,9 +65,9 @@ public class TravelRequestConsumer {
             log.info("✅ Workflow instance started & offset committed for {}", travelId);
 
         } catch (Exception e) {
-            // ❌ No ack -> container will retry (per your error handling/DLQ config)
+            // ❌ No ack -> Kafka will retry
             log.error("❌ Failed to start workflow for {} (key={} p{}@{}). Will retry. Cause: {}",
-                    travelId, key, partition, offset, e.toString(), e);
+                    travelId, key, partition, offset, e.getMessage(), e);
         }
     }
 }

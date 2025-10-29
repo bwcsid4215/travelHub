@@ -76,6 +76,7 @@ public class TravelRequestServiceImpl implements TravelRequestService {
                 .estimatedBudget(saved.getEstimatedBudget())
                 .travelDestination(dto.getTravelDestination())
                 .origin(dto.getOrigin())
+                .managerPresent(saved.isManagerPresent())
                 .build();
 
         // ✅ Publish event only after DB commit

@@ -20,4 +20,5 @@ public class EmployeeProxyDTO {
     private UUID managerId;
     private Set<String> roles;
     private Set<UUID> projectIds;
+    
 }

@@ -7,28 +7,23 @@ spring:
 
   main:
     banner-mode: console
-    # keep default (don't enable bean overriding)
 
   kafka:
     bootstrap-servers: localhost:29092
 
     consumer:
       group-id: workflow-group
-      # Don't replay the world on a fresh dev group
       auto-offset-reset: latest
       key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
       value-deserializer: org.springframework.kafka.support.serializer.JsonDeserializer
-      # Best practice: manual acks only after successful processing
       enable-auto-commit: false
       properties:
         spring.json.use.type.headers: false
         spring.json.value.default.type: com.bwc.approval_workflow_service.dto.TravelRequestProxyDTO
         spring.json.trusted.packages: "*"
-        # Good hygiene for transactional producers (if you add them later)
         isolation.level: read_committed
 
     listener:
-      # manual acknowledge after successful Zeebe start
       ack-mode: MANUAL_IMMEDIATE
       missing-topics-fatal: false
       concurrency: 3
@@ -61,10 +56,6 @@ zeebe:
     security:
       plaintext: true
     requestTimeout: PT60S
-    # ✅ Use ONLY the @Deployment annotation you already have.
-    # startup:
-    #   deployment:
-    #     resources: classpath:bpmn/travel_approval_v4.bpmn
 
     worker:
       threads: 4
@@ -107,7 +98,6 @@ management:
     tags:
       application: ${spring.application.name}
       environment: local
-    # 🚫 Avoid the Prometheus "same name, different tag keys" warning
     enable:
       executor: false
 
@@ -122,12 +112,12 @@ management:
 # =====================================================================
 services:
   employee:
-    url: http://localhost:8081
+    url: http://localhost:9010/ems
     connect-timeout: 5000
     read-timeout: 30000
 
   tasklist:
-    url: http://localhost:8082
+    url: http://localhost:7080
     connect-timeout: 5000
     read-timeout: 30000
 
@@ -184,18 +174,30 @@ resilience4j:
         exponentialBackoffMultiplier: 2
 
 # =====================================================================
-# 📝 Logging
+# 📝 Logging - Optimized for Production
 # =====================================================================
 logging:
   level:
     root: INFO
     io.camunda: INFO
-    com.bwc: DEBUG
+    com.bwc: INFO  # ✅ Changed from DEBUG to INFO
+    
+    # Kafka logging - keep at INFO
     org.springframework.kafka: INFO
     org.apache.kafka.clients.consumer: INFO
     org.apache.kafka.clients.producer: INFO
-    feign: DEBUG
+    
+    # ✅ Reduce Feign noise
+    feign: INFO  # Changed from DEBUG to INFO
+    feign.template.Template: WARN  # Suppress template debug logs
+    
+    # Database/JPA
     org.hibernate: WARN
+    org.springframework.jdbc: WARN
+    
+    # Spring Framework
+    org.springframework.web: INFO
+    org.springframework.boot: INFO
 
   pattern:
     console: "%d{yyyy-MM-dd HH:mm:ss.SSS} [%thread] %-5level %logger{36} - %msg%n"
