@@ -117,9 +117,13 @@ services:
     read-timeout: 30000
 
   tasklist:
-    url: http://localhost:7080
+    url: http://localhost:7088  # ✅ CHANGED: Standard Tasklist port
     connect-timeout: 5000
     read-timeout: 30000
+    # ✅ NEW: Authentication settings
+    auth-enabled: false  # Set to true if your Tasklist requires authentication
+    username: demo
+    password: demo
 
 # =====================================================================
 # 🔌 Feign
@@ -180,16 +184,20 @@ logging:
   level:
     root: INFO
     io.camunda: INFO
-    com.bwc: INFO  # ✅ Changed from DEBUG to INFO
+    com.bwc: DEBUG  # ✅ Set to DEBUG temporarily for troubleshooting
     
     # Kafka logging - keep at INFO
     org.springframework.kafka: INFO
     org.apache.kafka.clients.consumer: INFO
     org.apache.kafka.clients.producer: INFO
     
-    # ✅ Reduce Feign noise
-    feign: INFO  # Changed from DEBUG to INFO
-    feign.template.Template: WARN  # Suppress template debug logs
+    # ✅ WebClient debugging
+    org.springframework.web.reactive.function.client: DEBUG
+    reactor.netty.http.client: DEBUG
+    
+    # Feign logging
+    feign: INFO
+    feign.template.Template: WARN
     
     # Database/JPA
     org.hibernate: WARN

@@ -6,10 +6,12 @@ import java.util.Map;
 
 import org.springframework.http.MediaType;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.reactive.function.client.WebClient;
 
+import com.bwc.approval_workflow_service.workflow.EnhancedUserTaskService;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
@@ -22,6 +24,18 @@ public class TasklistDebugController {
     
     private final WebClient tasklistClient;
     private final ObjectMapper objectMapper;
+    
+private final EnhancedUserTaskService taskService;
+    
+    @GetMapping("/tasklist-test/{employeeId}")
+    public Map<String, Object> testTasklistApi(@PathVariable String employeeId) {
+        return taskService.testTasklistApiStates(employeeId);
+    }
+    
+    @GetMapping("/debug-task-states/{employeeId}")
+    public Map<String, Object> debugTaskStates(@PathVariable String employeeId) {
+        return taskService.testTasklistApiStates(employeeId);
+    }
     
     @GetMapping("/tasklist/connectivity")
     public Map<String, Object> testTasklistConnectivity() {
